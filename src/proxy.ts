@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getArticleLocale, isLocale } from "@/lib/content";
 import { findArticleBySlug } from "@/lib/db/content";
+import { adminProxy } from "@/lib/supabase/admin-proxy";
 
 const locales = ["ar", "en"] as const;
 
@@ -15,6 +16,8 @@ function preferredLocale(request: NextRequest) {
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  if (pathname === "/admin" || pathname.startsWith("/admin/"))
+    return adminProxy(request);
   const hasLocale = locales.some(
     (locale) => pathname === `/${locale}` || pathname.startsWith(`/${locale}/`),
   );
@@ -71,5 +74,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!api|_next|.*\\..*).*)"],
+  matcher: ["/admin/:path*", "/((?!api|_next|.*\\..*).*)"],
 };

@@ -41,4 +41,4 @@ Run `npm test`, `npm run typecheck`, `npm run lint`, and `npm run build`. After 
 
 The initial import passed exact content comparison, the rollback-only access tests, six unit tests and four browser tests. Supabase's security advisor reported only the expected informational notice for `messages`: RLS is enabled with no policies because inbox access is deliberately closed until the contact/admin feature is implemented. See [RLS enabled without policies](https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy).
 
-Auth flows, the dashboard, comment/CRM features, analytics collection, uploads, and sending contact messages remain deferred. Storage contains no migrated image assets because `content.ts` contained no files.
+The protected admin shell and password login/logout are implemented; see [admin setup](admin.md). Content editors, inbox access, comment/CRM features, analytics collection, uploads, and sending contact messages remain deferred. Storage contains no migrated image assets because `content.ts` contained no files.
