@@ -1,26 +1,16 @@
-import { requireAdmin } from "@/lib/auth/admin";
-import {
-  AdminHeading,
-  AdminPlaceholder,
-} from "@/components/admin/page-heading";
+import { AdminHeading } from "@/components/admin/page-heading";
+import { SettingsEditor } from "@/components/admin/settings-editor";
+import { getAdminSettings } from "@/lib/db/admin-settings";
+
 export default async function SettingsPage() {
-  await requireAdmin();
+  const records = await getAdminSettings();
   return (
     <>
       <AdminHeading
         title="إعدادات الموقع"
-        description="تحكم في هوية موقعك والنصوص التي تستقبل زواره."
+        description="حدّث هوية موقعك ومحتوى الصفحة الرئيسية بالعربية والإنجليزية."
       />
-      <div className="admin-grid admin-grid-two">
-        <AdminPlaceholder
-          title="محتوى الصفحة الرئيسية"
-          description="تحرير المقدمة والخدمات ومراحل العمل وأقسام الأعمال والمقالات والدعوة للتواصل بالعربية والإنجليزية."
-        />
-        <AdminPlaceholder
-          title="الهوية والإعدادات العامة"
-          description="تحديث اسم الموقع ووصفك المهني ونصوص التنقل والتذييل."
-        />
-      </div>
+      <SettingsEditor records={records} />
     </>
   );
 }

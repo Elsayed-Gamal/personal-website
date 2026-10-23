@@ -149,6 +149,12 @@ export const siteContent = pgTable(
       to: readers,
       using: sql`${t.key} in ('ui','home','about','contact','work','blog','project_detail','article_detail')`,
     }),
+    pgPolicy("Owner updates site settings", {
+      for: "update",
+      to: authenticated,
+      using: sql`${t.key} in ('ui','home') and (select private.is_site_owner())`,
+      withCheck: sql`${t.key} in ('ui','home') and (select private.is_site_owner())`,
+    }),
   ],
 ).enableRLS();
 

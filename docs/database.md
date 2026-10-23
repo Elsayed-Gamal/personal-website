@@ -19,7 +19,7 @@ Public content is fetched by Server Components through Supabase's HTTPS Data API
 | site_content         | Localized UI and page copy for public pages and detail templates                            |
 | messages             | Private inbox reserved for the later contact workflow                                       |
 
-All six tables use RLS. Visitors and signed-in users may only read published content; neither can insert, update, or delete any rows. Translation visibility also requires a published parent. Messages have no public privileges or policies. Administrators can edit via Supabase Studio until the admin application is implemented.
+All six tables use RLS. Visitors and ordinary signed-in users may only read published content. The confirmed owner may also update the value of `ui` and `home` rows through the settings editor. Translation visibility requires a published parent. Messages have no public privileges or policies. See [settings permissions and migration](admin.md).
 
 Publish both project translations before publishing a project (the present design requires Arabic and English). Publish at least one article translation before publishing an article. Adding a second article language is another translation row for the same `article_id`. Existing slugs remain unchanged. An article listed in either site locale links to its available language; incoming alternate-language links are canonicalized by the proxy, including Arabic slugs.
 
