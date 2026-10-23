@@ -1,0 +1,79 @@
+import Link from "next/link";
+import { ArrowUpRight } from "lucide-react";
+import { type Locale, projects, ui } from "@/lib/content";
+
+export function ProjectCard({
+  project,
+  locale,
+}: {
+  project: (typeof projects)[number];
+  locale: Locale;
+}) {
+  const content = project.content[locale];
+  return (
+    <Link
+      href={`/${locale}/work/${project.slug}`}
+      className="case-study-card group"
+    >
+      <div
+        className="project-cover"
+        data-color={project.color}
+        aria-hidden="true"
+      >
+        <span className="concept-label">
+          {locale === "ar" ? "تصور تجريبي" : "DESIGN CONCEPT"}
+        </span>
+        <div className="project-mockup" dir="ltr">
+          <div className="mockup-top">
+            <b>{content.title}</b>
+            <span>Overview &nbsp; Explore &nbsp; Settings</span>
+          </div>
+          {project.color === "cyan" ? (
+            <div className="finance-preview">
+              <span>Your workspace, at a glance</span>
+              <h4>A clearer picture.</h4>
+              <div className="chart-bars">
+                {[30, 50, 43, 65, 58, 80, 72, 94].map((height, i) => (
+                  <i key={i} style={{ height: `${height}%` }} />
+                ))}
+              </div>
+              <div className="mockup-pills">
+                <span>Overview</span>
+                <span>Activity</span>
+                <span>Reports</span>
+              </div>
+            </div>
+          ) : (
+            <div className="store-preview">
+              <div>
+                <small>THE EVERYDAY COLLECTION</small>
+                <h4>
+                  Less, but
+                  <br />
+                  better.
+                </h4>
+                <span>Discover the collection ↗</span>
+              </div>
+              <div className="store-object">
+                <div />
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+      <div className="project-info">
+        <div>
+          <p className="eyebrow">{project.category[locale]}</p>
+          <h3>{content.title}</h3>
+        </div>
+        <span className="project-arrow">
+          <ArrowUpRight size={22} />
+        </span>
+      </div>
+      <p className="project-summary">{content.summary}</p>
+      <span className="project-read">
+        {ui[locale].viewProject} <span aria-hidden="true">↗</span>
+      </span>
+    </Link>
+  );
+}
