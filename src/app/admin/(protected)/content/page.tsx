@@ -1,26 +1,15 @@
-import { requireAdmin } from "@/lib/auth/admin";
-import {
-  AdminHeading,
-  AdminPlaceholder,
-} from "@/components/admin/page-heading";
+import { AdminHeading } from "@/components/admin/page-heading";
+import { ContentManager } from "@/components/admin/content-manager";
+import { getAdminContent } from "@/lib/db/admin-content";
 export default async function ContentPage() {
-  await requireAdmin();
+  const entries = await getAdminContent();
   return (
     <>
       <AdminHeading
         title="إدارة المحتوى"
-        description="مقالاتك وأعمالك في مساحة واحدة، مع دعم العربية والإنجليزية."
+        description="أضف أعمالك وشارك أفكارك، وتحكم في المسودات والنشر والترجمات."
       />
-      <div className="admin-grid admin-grid-two">
-        <AdminPlaceholder
-          title="المقالات"
-          description="إضافة وتحرير المقالات، إدارة المسودات والنشر، وإضافة ترجمة ثانية عند الحاجة."
-        />
-        <AdminPlaceholder
-          title="المشاريع"
-          description="إضافة أعمالك، تحرير تفاصيلها وترتيب ظهورها في معرض الأعمال."
-        />
-      </div>
+      <ContentManager initialEntries={entries} />
     </>
   );
 }

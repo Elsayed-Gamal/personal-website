@@ -2,7 +2,7 @@
 
 The Arabic admin area uses a separate root layout and is not linked from the public navigation. Routes: `/admin/dashboard`, `/admin/content`, `/admin/messages`, `/admin/settings`. `/admin` redirects to the dashboard after authorization; visitors are redirected to `/admin/login`.
 
-Settings now provides live editors for the Arabic/English site identity, navigation, footer, labels, and every homepage section. Content management, message queries and analytics remain scaffolding. Every loader/action must call `requireAdmin()`; a protected layout alone is insufficient.
+Settings provides live editors for the Arabic/English site identity, navigation, footer, labels, and every homepage section. [Content management](content-management.md) supports article/project CRUD, publication and translations. Message queries and analytics remain scaffolding. Every loader/action must call `requireAdmin()`; a protected layout alone is insufficient.
 
 Authentication uses Supabase SSR cookies and live `auth.getUser()` verification. The proxy refreshes session cookies; both the protected layout and each protected page recheck authorization. Only the confirmed, non-anonymous account matching server-only `SUPABASE_ADMIN_EMAIL` may enter. Empty configuration denies access. User-editable metadata never grants access. Admin responses use private/no-store cache headers and noindex directives. These directives supplement, not replace, server authorization.
 

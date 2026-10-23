@@ -50,6 +50,12 @@ export const projects = pgTable(
       to: readers,
       using: sql`${t.published}`,
     }),
+    pgPolicy("Owner manages projects", {
+      for: "all",
+      to: authenticated,
+      using: sql`(select private.is_site_owner())`,
+      withCheck: sql`(select private.is_site_owner())`,
+    }),
   ],
 ).enableRLS();
 
@@ -72,6 +78,12 @@ export const projectTranslations = pgTable(
       for: "select",
       to: readers,
       using: sql`exists (select 1 from public.projects p where p.slug = ${t.projectSlug} and p.published)`,
+    }),
+    pgPolicy("Owner manages project translations", {
+      for: "all",
+      to: authenticated,
+      using: sql`(select private.is_site_owner())`,
+      withCheck: sql`(select private.is_site_owner())`,
     }),
   ],
 ).enableRLS();
@@ -98,6 +110,12 @@ export const articles = pgTable(
       to: readers,
       using: sql`${t.published}`,
     }),
+    pgPolicy("Owner manages articles", {
+      for: "all",
+      to: authenticated,
+      using: sql`(select private.is_site_owner())`,
+      withCheck: sql`(select private.is_site_owner())`,
+    }),
   ],
 ).enableRLS();
 
@@ -122,6 +140,12 @@ export const articleTranslations = pgTable(
       for: "select",
       to: readers,
       using: sql`${t.published} and exists (select 1 from public.articles a where a.id = ${t.articleId} and a.published)`,
+    }),
+    pgPolicy("Owner manages article translations", {
+      for: "all",
+      to: authenticated,
+      using: sql`(select private.is_site_owner())`,
+      withCheck: sql`(select private.is_site_owner())`,
     }),
   ],
 ).enableRLS();

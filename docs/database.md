@@ -19,7 +19,7 @@ Public content is fetched by Server Components through Supabase's HTTPS Data API
 | site_content         | Localized UI and page copy for public pages and detail templates                            |
 | messages             | Private inbox reserved for the later contact workflow                                       |
 
-All six tables use RLS. Visitors and ordinary signed-in users may only read published content. The confirmed owner may also update the value of `ui` and `home` rows through the settings editor. Translation visibility requires a published parent. Messages have no public privileges or policies. See [settings permissions and migration](admin.md).
+All six tables use RLS. Visitors and ordinary signed-in users may only read published content. The confirmed owner may also update the value of `ui` and `home` rows through the settings editor and manage articles, projects and their translations. Translation visibility requires a published parent. Messages have no public privileges or policies. See [settings permissions](admin.md) and [content management permissions and migration](content-management.md).
 
 Publish both project translations before publishing a project (the present design requires Arabic and English). Publish at least one article translation before publishing an article. Adding a second article language is another translation row for the same `article_id`. Existing slugs remain unchanged. An article listed in either site locale links to its available language; incoming alternate-language links are canonicalized by the proxy, including Arabic slugs.
 
@@ -41,4 +41,4 @@ Run `npm test`, `npm run typecheck`, `npm run lint`, and `npm run build`. After 
 
 The initial import passed exact content comparison, the rollback-only access tests, six unit tests and four browser tests. Supabase's security advisor reported only the expected informational notice for `messages`: RLS is enabled with no policies because inbox access is deliberately closed until the contact/admin feature is implemented. See [RLS enabled without policies](https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy).
 
-The protected admin shell and password login/logout are implemented; see [admin setup](admin.md). Content editors, inbox access, comment/CRM features, analytics collection, uploads, and sending contact messages remain deferred. Storage contains no migrated image assets because `content.ts` contained no files.
+The protected admin shell, password login/logout, settings editor and article/project editors are implemented; see [admin setup](admin.md). Inbox access, comment/CRM features, analytics collection, uploads, and sending contact messages remain deferred. Storage contains no migrated image assets because `content.ts` contained no files.
