@@ -13,6 +13,7 @@ import {
   check,
   pgPolicy,
   pgRole,
+  bigint,
 } from "drizzle-orm/pg-core";
 import type { Locale, SiteContentKey, SiteUI } from "@/lib/content";
 
@@ -27,6 +28,29 @@ const times = () => ({
     .notNull()
     .defaultNow(),
 });
+
+export const analyticsDaily = pgTable(
+  "analytics_daily",
+  {
+    day: date("day").notNull(),
+    path: text("path").notNull(),
+    country: text("country").notNull(),
+    views: bigint("views", { mode: "number" }).notNull().default(0),
+  },
+  (t) => [
+    primaryKey({ columns: [t.day, t.path, t.country] }),
+    check("analytics_daily_views_check", sql`${t.views} >= 0`),
+    check(
+      "analytics_daily_country_check",
+      sql`${t.country} ~ '^[A-Z]{2}$' or ${t.country} = 'ZZ'`,
+    ),
+    pgPolicy("Owner reads analytics", {
+      for: "select",
+      to: authenticated,
+      using: sql`(select private.is_site_owner())`,
+    }),
+  ],
+).enableRLS();
 
 export const projects = pgTable(
   "projects",
