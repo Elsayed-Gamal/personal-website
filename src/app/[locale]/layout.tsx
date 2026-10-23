@@ -36,7 +36,11 @@ export default async function LocaleLayout({
   if (!isLocale(locale)) notFound();
 
   return (
-    <html lang={locale} dir={locale === "ar" ? "rtl" : "ltr"}>
+    <html
+      lang={locale}
+      dir={locale === "ar" ? "rtl" : "ltr"}
+      data-scroll-behavior="smooth"
+    >
       <body>
         <SiteHeader locale={locale} />
         <main>{children}</main>
