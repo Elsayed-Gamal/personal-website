@@ -18,6 +18,10 @@ export const metadata: Metadata = {
   },
   description:
     "A bilingual portfolio and technical journal by an independent full-stack developer.",
+  icons: {
+    icon: { url: "/favicon.svg", type: "image/svg+xml", sizes: "any" },
+    shortcut: "/favicon.svg",
+  },
 };
 
 export function generateStaticParams() {

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <title>Elsayed Gamal</title>
+  <rect width="64" height="64" rx="16" fill="#245BC4" />
+  <g stroke="#FFF" stroke-width="4.5" stroke-linecap="square" stroke-linejoin="round">
+    <path d="M27 21H15V43H27M15 32H25" />
+    <path d="M50 24C47 20 42 20 38 23C34 26 34 38 38 41C41 44 47 44 50 41V33H44" />
+  </g>
+</svg>
