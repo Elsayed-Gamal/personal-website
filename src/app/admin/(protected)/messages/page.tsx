@@ -1,20 +1,15 @@
-import { requireAdmin } from "@/lib/auth/admin";
-import {
-  AdminHeading,
-  AdminPlaceholder,
-} from "@/components/admin/page-heading";
+import { AdminHeading } from "@/components/admin/page-heading";
+import { MessageInbox } from "@/components/admin/message-inbox";
+import { getAdminMessages } from "@/lib/db/admin-messages";
 export default async function MessagesPage() {
-  await requireAdmin();
+  const messages = await getAdminMessages();
   return (
     <>
       <AdminHeading
         title="الرسائل"
-        description="مساحة لمتابعة استفسارات العملاء وفرص التعاون."
+        description="تابع استفسارات العملاء ورسائل التواصل الواردة من الموقع."
       />
-      <AdminPlaceholder
-        title="صندوق الوارد"
-        description="سيُربط هذا القسم برسائل نموذج التواصل، مع عرض تفاصيل الرسالة وحالة قراءتها."
-      />
+      <MessageInbox initialMessages={messages} />
     </>
   );
 }

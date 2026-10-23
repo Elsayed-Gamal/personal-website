@@ -101,6 +101,20 @@ export const aboutContentSchema = z.object({
   cta: z.string(),
 });
 export const contactContentSchema = z.object({
+  form: z.object({
+    name: z.string(),
+    email: z.string(),
+    message: z.string(),
+    submit: z.string(),
+    sending: z.string(),
+    success: z.string(),
+    error: z.string(),
+    invalid: z.string(),
+    rateLimited: z.string(),
+    privacy: z.string(),
+    hint: z.string(),
+    another: z.string(),
+  }),
   eyebrow: z.string(),
   title: z.string(),
   intro: z.string(),

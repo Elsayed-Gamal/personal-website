@@ -22,7 +22,8 @@ END $$;
 SET LOCAL ROLE authenticated;
 DO $$ BEGIN
   IF EXISTS (SELECT 1 FROM public.articles WHERE id = '__rls_draft__') THEN RAISE EXCEPTION 'Draft exposed to non-admin account'; END IF;
-  IF has_table_privilege(current_user, 'public.messages', 'SELECT') THEN RAISE EXCEPTION 'Inbox exposed to non-admin account'; END IF;
-  IF has_table_privilege(current_user, 'public.articles', 'UPDATE') THEN RAISE EXCEPTION 'Non-admin write privilege exposed'; END IF;
+  IF EXISTS (SELECT 1 FROM public.messages) THEN RAISE EXCEPTION 'Inbox exposed to non-admin account'; END IF;
+  UPDATE public.articles SET published = false WHERE id = '__rls_published__';
+  IF FOUND THEN RAISE EXCEPTION 'Non-admin write accepted'; END IF;
 END $$;
 ROLLBACK;

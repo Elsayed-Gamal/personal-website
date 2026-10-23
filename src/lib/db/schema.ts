@@ -198,5 +198,21 @@ export const messages = pgTable(
   (t) => [
     check("messages_locale_check", sql`${t.locale} in ('ar','en')`),
     index("messages_created_at_idx").on(t.createdAt.desc()),
+    pgPolicy("Owner reads messages", {
+      for: "select",
+      to: authenticated,
+      using: sql`(select private.is_site_owner())`,
+    }),
+    pgPolicy("Owner marks messages", {
+      for: "update",
+      to: authenticated,
+      using: sql`(select private.is_site_owner())`,
+      withCheck: sql`(select private.is_site_owner())`,
+    }),
+    pgPolicy("Owner deletes messages", {
+      for: "delete",
+      to: authenticated,
+      using: sql`(select private.is_site_owner())`,
+    }),
   ],
 ).enableRLS();
