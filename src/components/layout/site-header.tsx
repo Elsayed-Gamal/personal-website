@@ -4,11 +4,9 @@ import Link from "next/link";
 import { useEffect, useRef } from "react";
 import { ArrowUpRight, Menu } from "lucide-react";
 import { LanguageSwitcher } from "@/components/layout/language-switcher";
-import type { Locale } from "@/lib/content";
-import { ui } from "@/lib/content";
+import type { Locale, SiteUI } from "@/lib/content";
 
-export function SiteHeader({ locale }: { locale: Locale }) {
-  const t = ui[locale];
+export function SiteHeader({ locale, t }: { locale: Locale; t: SiteUI }) {
   const menuRef = useRef<HTMLDetailsElement>(null);
 
   useEffect(() => {
@@ -46,10 +44,10 @@ export function SiteHeader({ locale }: { locale: Locale }) {
           </span>
           <span className="hidden sm:block">
             <span className="block text-sm font-bold tracking-[-.01em]">
-              Elsayed Gamal
+              {t.brandName}
             </span>
             <span className="mt-0.5 block text-[10px] tracking-[.17em] text-[#777873] uppercase">
-              Full-stack developer
+              {t.brandRole}
             </span>
           </span>
         </Link>
@@ -62,7 +60,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
             {t.nav.home}
           </Link>
           <Link className="nav-link" href={`/${locale}#services`}>
-            {locale === "ar" ? "الخدمات" : "Services"}
+            {t.nav.services}
           </Link>
           <Link className="nav-link" href={`/${locale}/work`}>
             {t.nav.work}
@@ -76,7 +74,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
         </nav>
 
         <div className="flex items-center gap-1.5">
-          <LanguageSwitcher locale={locale} />
+          <LanguageSwitcher locale={locale} label={t.language} />
           <Link
             href={`/${locale}/contact`}
             className="primary-button hidden items-center gap-2 px-4 py-2.5 text-sm sm:flex"
@@ -117,7 +115,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
                 {t.nav.home}
               </Link>
               <Link className="mobile-nav-link" href={`/${locale}#services`}>
-                {locale === "ar" ? "الخدمات" : "Services"}
+                {t.nav.services}
               </Link>
               <Link className="mobile-nav-link" href={`/${locale}/work`}>
                 {t.nav.work}

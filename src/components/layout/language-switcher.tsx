@@ -3,9 +3,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { Locale } from "@/lib/content";
-import { ui } from "@/lib/content";
 
-export function LanguageSwitcher({ locale }: { locale: Locale }) {
+export function LanguageSwitcher({
+  locale,
+  label,
+}: {
+  locale: Locale;
+  label: string;
+}) {
   const pathname = usePathname();
   const otherLocale = locale === "ar" ? "en" : "ar";
   const target = pathname.replace(/^\/(ar|en)(?=\/|$)/, `/${otherLocale}`);
@@ -16,7 +21,7 @@ export function LanguageSwitcher({ locale }: { locale: Locale }) {
       className="language-switch"
       aria-label={locale === "ar" ? "Switch to English" : "التبديل إلى العربية"}
     >
-      {ui[locale].language}
+      {label}
     </Link>
   );
 }

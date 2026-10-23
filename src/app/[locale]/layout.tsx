@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
-import { isLocale, locales } from "@/lib/content";
+import { isLocale } from "@/lib/content";
+import { getSiteUI } from "@/lib/db/content";
 import "@fontsource-variable/manrope";
 import "@fontsource/ibm-plex-sans-arabic/400.css";
 import "@fontsource/ibm-plex-sans-arabic/500.css";
@@ -24,9 +25,7 @@ export const metadata: Metadata = {
   },
 };
 
-export function generateStaticParams() {
-  return locales.map((locale) => ({ locale }));
-}
+export const dynamic = "force-dynamic";
 
 export default async function LocaleLayout({
   children,
@@ -34,6 +33,7 @@ export default async function LocaleLayout({
 }: LayoutProps<"/[locale]">) {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
+  const t = await getSiteUI(locale);
 
   return (
     <html
@@ -42,7 +42,7 @@ export default async function LocaleLayout({
       data-scroll-behavior="smooth"
     >
       <body>
-        <SiteHeader locale={locale} />
+        <SiteHeader locale={locale} t={t} />
         <main>{children}</main>
         <SiteFooter locale={locale} />
       </body>

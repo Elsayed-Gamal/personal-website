@@ -1,38 +1,20 @@
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { notFound } from "next/navigation";
-import { isLocale, projects } from "@/lib/content";
-
-export function generateStaticParams() {
-  return projects.flatMap((project) =>
-    ["ar", "en"].map((locale) => ({ locale, slug: project.slug })),
-  );
-}
+import { isLocale } from "@/lib/content";
+import { getProjectBySlug, getSiteContent } from "@/lib/db/content";
 
 export default async function ProjectPage({
   params,
 }: PageProps<"/[locale]/work/[slug]">) {
   const { locale, slug } = await params;
   if (!isLocale(locale)) notFound();
-  const project = projects.find((item) => item.slug === slug);
+  const [project, labels] = await Promise.all([
+    getProjectBySlug(slug),
+    getSiteContent("project_detail", locale),
+  ]);
   if (!project) notFound();
   const content = project.content[locale];
-  const labels =
-    locale === "ar"
-      ? {
-          back: "كل المشاريع",
-          overview: "نظرة عامة",
-          role: "نطاق العمل",
-          next: "ابدأ مشروعًا مشابهًا",
-          note: "هذه دراسة حالة تجريبية وسيتم استبدالها بمحتوى مشروع حقيقي.",
-        }
-      : {
-          back: "All projects",
-          overview: "Overview",
-          role: "Scope",
-          next: "Start a similar project",
-          note: "This is an illustrative case study ready to be replaced with real project content.",
-        };
   return (
     <article>
       <section className="container-shell py-16 sm:py-24">

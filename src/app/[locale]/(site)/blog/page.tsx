@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ArticleCard } from "@/components/blog/article-card";
-import { articles, isLocale } from "@/lib/content";
+import { isLocale } from "@/lib/content";
+import { getArticles, getSiteContent } from "@/lib/db/content";
 
 export const metadata: Metadata = { title: "Writing" };
 
@@ -10,19 +11,10 @@ export default async function BlogPage({
 }: PageProps<"/[locale]/blog">) {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
-  const copy =
-    locale === "ar"
-      ? {
-          eyebrow: "المقالات",
-          title: "ملاحظات عملية عن بناء المنتجات وهندسة البرمجيات.",
-          text: "أفكار من العمل اليومي: قرارات تقنية، تجربة مستخدم، ودروس تستحق المشاركة.",
-        }
-      : {
-          eyebrow: "Writing",
-          title:
-            "Practical notes on product building and software engineering.",
-          text: "Ideas from the work: technical decisions, user experience, and lessons worth sharing.",
-        };
+  const [articles, copy] = await Promise.all([
+    getArticles(),
+    getSiteContent("blog", locale),
+  ]);
   return (
     <section className="container-shell py-20 sm:py-28">
       <header className="mb-16 max-w-4xl">

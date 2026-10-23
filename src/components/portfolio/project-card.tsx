@@ -1,15 +1,17 @@
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
-import { type Locale, projects, ui } from "@/lib/content";
+import type { Locale, Project } from "@/lib/content";
+import { getSiteUI } from "@/lib/db/content";
 
-export function ProjectCard({
+export async function ProjectCard({
   project,
   locale,
 }: {
-  project: (typeof projects)[number];
+  project: Project;
   locale: Locale;
 }) {
   const content = project.content[locale];
+  const t = await getSiteUI(locale);
   return (
     <Link
       href={`/${locale}/work/${project.slug}`}
@@ -72,7 +74,7 @@ export function ProjectCard({
       </div>
       <p className="project-summary">{content.summary}</p>
       <span className="project-read">
-        {ui[locale].viewProject} <span aria-hidden="true">↗</span>
+        {t.viewProject} <span aria-hidden="true">↗</span>
       </span>
     </Link>
   );

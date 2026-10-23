@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { findArticleBySlug, getArticleLocale, isLocale } from "@/lib/content";
+import { getArticleLocale, isLocale } from "@/lib/content";
+import { findArticleBySlug } from "@/lib/db/content";
 
 const locales = ["ar", "en"] as const;
 
@@ -12,7 +13,7 @@ function preferredLocale(request: NextRequest) {
     : "en";
 }
 
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const hasLocale = locales.some(
     (locale) => pathname === `/${locale}` || pathname.startsWith(`/${locale}/`),
@@ -34,7 +35,18 @@ export function proxy(request: NextRequest) {
     } catch {
       return NextResponse.next();
     }
-    const article = findArticleBySlug(slug);
+    let article;
+    try {
+      article = await findArticleBySlug(slug);
+    } catch {
+      return new NextResponse(
+        "Content is temporarily unavailable. Please try again later.",
+        {
+          status: 503,
+          headers: { "Retry-After": "30", "Cache-Control": "no-store" },
+        },
+      );
+    }
     if (article) {
       const articleLocale = getArticleLocale(article, locale);
       const translation = article.translations[articleLocale]!;

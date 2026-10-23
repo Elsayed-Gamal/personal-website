@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ProjectCard } from "@/components/portfolio/project-card";
-import { isLocale, projects } from "@/lib/content";
+import { isLocale } from "@/lib/content";
+import { getProjects, getSiteContent } from "@/lib/db/content";
 
 export const metadata: Metadata = { title: "Selected work" };
 
@@ -10,18 +11,10 @@ export default async function WorkPage({
 }: PageProps<"/[locale]/work">) {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
-  const copy =
-    locale === "ar"
-      ? {
-          eyebrow: "المشاريع",
-          title: "أعمال مختارة جمعت بين التفكير في المنتج والتنفيذ التقني.",
-          text: "دراسات حالة تجريبية تحدد شكل العرض النهائي، وسيتم استبدالها بالمشاريع والنتائج الحقيقية.",
-        }
-      : {
-          eyebrow: "Selected work",
-          title: "Work that connects product thinking with solid engineering.",
-          text: "Illustrative case studies defining the final presentation, ready to be replaced with real projects and outcomes.",
-        };
+  const [projects, copy] = await Promise.all([
+    getProjects(),
+    getSiteContent("work", locale),
+  ]);
   return (
     <section className="container-shell py-20 sm:py-28">
       <header className="mb-16 max-w-4xl">

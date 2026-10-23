@@ -1,298 +1,205 @@
+import { z } from "zod";
+
 export const locales = ["ar", "en"] as const;
 export type Locale = (typeof locales)[number];
-
 export function isLocale(value: string): value is Locale {
   return locales.includes(value as Locale);
 }
 
-export const ui = {
-  ar: {
-    nav: {
-      home: "الرئيسية",
-      work: "المشاريع",
-      blog: "المقالات",
-      about: "عني",
-      contact: "تواصل معي",
-    },
-    availability: "متاح لمشروعات مختارة",
-    footer: "أبني منتجات رقمية سريعة، واضحة، وقابلة للنمو.",
-    language: "EN",
-    viewProject: "عرض دراسة الحالة",
-    readArticle: "قراءة المقال",
-    allWork: "كل المشاريع",
-    allArticles: "كل المقالات",
-    minutes: "دقائق قراءة",
-    originalLanguage: "المقال متاح باللغة الإنجليزية فقط",
-  },
-  en: {
-    nav: {
-      home: "Home",
-      work: "Work",
-      blog: "Writing",
-      about: "About",
-      contact: "Let's talk",
-    },
-    availability: "Available for selected projects",
-    footer: "I build fast, clear digital products designed to grow.",
-    language: "عربي",
-    viewProject: "View case study",
-    readArticle: "Read article",
-    allWork: "All projects",
-    allArticles: "All articles",
-    minutes: "min read",
-    originalLanguage: "This article is available in Arabic only",
-  },
-} satisfies Record<Locale, object>;
+const localizedText = z.object({ ar: z.string(), en: z.string() });
+export const siteUISchema = z.object({
+  nav: z.object({
+    home: z.string(),
+    services: z.string(),
+    work: z.string(),
+    blog: z.string(),
+    about: z.string(),
+    contact: z.string(),
+  }),
+  availability: z.string(),
+  footer: z.string(),
+  footerSignature: z.string(),
+  language: z.string(),
+  brandName: z.string(),
+  brandRole: z.string(),
+  viewProject: z.string(),
+  readArticle: z.string(),
+  allWork: z.string(),
+  allArticles: z.string(),
+  minutes: z.string(),
+  originalLanguage: z.string(),
+});
+export type SiteUI = z.infer<typeof siteUISchema>;
 
-export const homeContent = {
-  ar: {
-    eyebrow: "مطور Full-Stack مستقل",
-    title: "أحوّل الأفكار المعقدة إلى منتجات رقمية بسيطة ومؤثرة.",
-    intro:
-      "أصمم وأبني تجارب ويب متكاملة تجمع بين وضوح المنتج، جودة الواجهة، وهندسة خلفية تتحمل النمو.",
-    primaryCta: "ابدأ مشروعك",
-    secondaryCta: "شاهد أعمالي",
-    proof: ["تجربة مستخدم مدروسة", "أداء سريع", "كود قابل للتوسع"],
-    workEyebrow: "أعمال مختارة",
-    workTitle: "منتجات صُممت لحل مشكلات حقيقية.",
-    workIntro:
-      "نماذج دراسات حالة توضح كيف أحوّل أهداف العمل إلى تجربة منتج واضحة وقابلة للقياس.",
-    servicesEyebrow: "ما الذي أقدمه",
-    servicesTitle: "من الفكرة إلى الإطلاق، بدون فجوات بين التصميم والتنفيذ.",
-    services: [
-      {
-        number: "01",
-        title: "استراتيجية المنتج",
-        text: "تحويل الفكرة إلى نطاق واضح، رحلة مستخدم، وخطة إطلاق عملية.",
-      },
-      {
-        number: "02",
-        title: "واجهات الويب",
-        text: "واجهات سريعة ومتجاوبة، مبنية حول المحتوى وسهولة الاستخدام.",
-      },
-      {
-        number: "03",
-        title: "الأنظمة الخلفية",
-        text: "واجهات API وقواعد بيانات وتكاملات آمنة قابلة للتوسع والصيانة.",
-      },
-    ],
-    processEyebrow: "طريقة العمل",
-    processTitle: "تعاون واضح، قرارات أسرع، ونتيجة بلا مفاجآت.",
-    process: ["نفهم المشكلة", "نحدد النطاق", "نبني ونختبر", "نطلق ونحسن"],
-    writingEyebrow: "أفكار وملاحظات",
-    writingTitle: "أكتب عما أتعلمه أثناء بناء المنتجات.",
-    ctaTitle: "عندك فكرة تستحق البناء؟",
-    ctaText: "احكِ لي عن المشروع، وسأرد عليك بخطوة تالية واضحة.",
-    ctaButton: "أرسل تفاصيل المشروع",
-  },
-  en: {
-    eyebrow: "Independent full-stack developer",
-    title: "I turn complex ideas into simple, high-impact digital products.",
-    intro:
-      "I design and build end-to-end web experiences that combine product clarity, polished interfaces, and backends ready to scale.",
-    primaryCta: "Start a project",
-    secondaryCta: "Explore my work",
-    proof: ["Thoughtful UX", "Fast performance", "Scalable code"],
-    workEyebrow: "Selected work",
-    workTitle: "Products designed around real problems.",
-    workIntro:
-      "Sample case studies showing how business goals become clear, measurable product experiences.",
-    servicesEyebrow: "What I do",
-    servicesTitle:
-      "From first idea to launch, with no gap between design and engineering.",
-    services: [
-      {
-        number: "01",
-        title: "Product strategy",
-        text: "Turning an idea into a clear scope, user journey, and practical launch plan.",
-      },
-      {
-        number: "02",
-        title: "Web experiences",
-        text: "Fast, responsive interfaces designed around content and usability.",
-      },
-      {
-        number: "03",
-        title: "Backend systems",
-        text: "Secure, maintainable APIs, databases, and integrations built to grow.",
-      },
-    ],
-    processEyebrow: "How I work",
-    processTitle: "Clear collaboration, faster decisions, and no surprises.",
-    process: ["Understand", "Define", "Build & test", "Launch & improve"],
-    writingEyebrow: "Notes & ideas",
-    writingTitle: "Writing about what I learn while building products.",
-    ctaTitle: "Have an idea worth building?",
-    ctaText: "Tell me about the project and I’ll reply with a clear next step.",
-    ctaButton: "Share your project",
-  },
-} satisfies Record<Locale, object>;
+const serviceSchema = z.object({
+  icon: z.enum(["globe", "layers", "shopping-bag"]),
+  title: z.string(),
+  text: z.string(),
+  tag: z.string(),
+});
+const stepSchema = z.object({ title: z.string(), text: z.string() });
+export const homeContentSchema = z.object({
+  hero: z.object({
+    label: z.string(),
+    title: z.string(),
+    accentTitle: z.string(),
+    description: z.string(),
+    primaryCta: z.string(),
+    secondaryCta: z.string(),
+    benefits: z.array(z.string()).length(3),
+    detailTitle: z.string(),
+    detailText: z.string(),
+    cursorLabel: z.string(),
+    artDescription: z.string(),
+  }),
+  services: z.object({
+    eyebrow: z.string(),
+    title: z.string(),
+    description: z.string(),
+    items: z.array(serviceSchema).length(3),
+  }),
+  work: z.object({
+    eyebrow: z.string(),
+    title: z.string(),
+    description: z.string(),
+    link: z.string(),
+  }),
+  process: z.object({
+    eyebrow: z.string(),
+    title: z.string(),
+    description: z.string(),
+    steps: z.array(stepSchema).length(4),
+  }),
+  journal: z.object({
+    eyebrow: z.string(),
+    title: z.string(),
+    link: z.string(),
+  }),
+  cta: z.object({
+    eyebrow: z.string(),
+    title: z.string(),
+    description: z.string(),
+    button: z.string(),
+  }),
+});
+export type HomeContent = z.infer<typeof homeContentSchema>;
 
+const valueSchema = z.object({
+  icon: z.enum(["compass", "gauge", "workflow", "code"]),
+  title: z.string(),
+  text: z.string(),
+});
+export const aboutContentSchema = z.object({
+  eyebrow: z.string(),
+  title: z.string(),
+  intro: z.string(),
+  storyTitle: z.string(),
+  story: z.string(),
+  values: z.array(valueSchema).length(4),
+  stackTitle: z.string(),
+  stack: z.array(z.string()),
+  cta: z.string(),
+});
+export const contactContentSchema = z.object({
+  eyebrow: z.string(),
+  title: z.string(),
+  intro: z.string(),
+  promptsTitle: z.string(),
+  prompts: z.array(z.string()).length(3),
+  cardTitle: z.string(),
+  cardText: z.string(),
+  emailLabel: z.string(),
+  workPrompt: z.string(),
+  workLink: z.string(),
+});
+export const listingContentSchema = z.object({
+  eyebrow: z.string(),
+  title: z.string(),
+  text: z.string(),
+});
+export const projectDetailContentSchema = z.object({
+  back: z.string(),
+  overview: z.string(),
+  role: z.string(),
+  next: z.string(),
+  note: z.string(),
+});
+export const articleDetailContentSchema = z.object({
+  back: z.string(),
+  note: z.string(),
+  minutes: z.string(),
+});
+
+export const siteContentSchemas = {
+  ui: siteUISchema,
+  home: homeContentSchema,
+  about: aboutContentSchema,
+  contact: contactContentSchema,
+  work: listingContentSchema,
+  blog: listingContentSchema,
+  project_detail: projectDetailContentSchema,
+  article_detail: articleDetailContentSchema,
+} as const;
+export type SiteContentKey = keyof typeof siteContentSchemas;
+export type SiteContentMap = {
+  [K in SiteContentKey]: z.infer<(typeof siteContentSchemas)[K]>;
+};
+
+export const projectTranslationSchema = z.object({
+  title: z.string(),
+  summary: z.string(),
+  body: z.string(),
+});
 export type LocalizedText = Record<
   Locale,
-  { title: string; summary: string; body: string }
+  z.infer<typeof projectTranslationSchema>
 >;
-
-export const projects = [
-  {
-    slug: "finflow-platform",
-    index: "01",
-    year: "2026",
-    category: { ar: "منصة مالية", en: "Fintech platform" },
-    color: "cyan",
-    stack: ["Next.js", "PostgreSQL", "TypeScript"],
-    content: {
-      ar: {
-        title: "FinFlow",
-        summary:
-          "تجربة مالية تجمع الحسابات والتقارير والقرارات في مساحة واحدة واضحة.",
-        body: "صُممت المنصة لتقليل الوقت بين قراءة الأرقام واتخاذ القرار. بدأ العمل بإعادة ترتيب رحلة المستخدم، ثم بناء نظام واجهة مرن ولوحة تقارير سريعة.\n\nهذا المحتوى نموذج توضيحي لدراسة الحالة، وسيُستبدل ببيانات المشروع الحقيقية لاحقًا.",
-      },
-      en: {
-        title: "FinFlow",
-        summary:
-          "A focused financial workspace bringing accounts, reporting, and decisions into one clear flow.",
-        body: "The platform was designed to shorten the distance between reading the numbers and making a decision. The work started by restructuring the user journey, followed by a flexible interface system and a fast reporting experience.\n\nThis is illustrative case-study content and will be replaced with real project information later.",
-      },
-    },
-  },
-  {
-    slug: "orbit-commerce",
-    index: "02",
-    year: "2025",
-    category: { ar: "تجارة إلكترونية", en: "E-commerce" },
-    color: "violet",
-    stack: ["React", "Node.js", "Supabase"],
-    content: {
-      ar: {
-        title: "Orbit Commerce",
-        summary:
-          "واجهة تجارة سريعة تجعل اكتشاف المنتج والشراء رحلة أقصر وأكثر ثقة.",
-        body: "ركزت التجربة على سرعة الوصول للمنتج الصحيح وتقليل التردد في خطوات الشراء. تم بناء نظام مكونات يدعم الحملات والكتالوج وتغير المحتوى دون فقد الاتساق.\n\nهذه دراسة حالة تجريبية لأغراض تصميم النسخة الأولى.",
-      },
-      en: {
-        title: "Orbit Commerce",
-        summary:
-          "A fast commerce experience that makes discovery and checkout shorter and more confident.",
-        body: "The experience focused on helping customers reach the right product quickly and reducing hesitation throughout checkout. A flexible component system supports campaigns, catalog changes, and evolving content.\n\nThis is a sample case study for the initial website design.",
-      },
-    },
-  },
-  {
-    slug: "pulse-operations",
-    index: "03",
-    year: "2025",
-    category: { ar: "أداة تشغيل", en: "Operations tool" },
-    color: "amber",
-    stack: ["Next.js", "API Design", "Analytics"],
-    content: {
-      ar: {
-        title: "Pulse Ops",
-        summary:
-          "لوحة تشغيل تحول البيانات اليومية إلى أولويات واضحة للفرق سريعة الحركة.",
-        body: "الهدف كان استبدال الجداول المشتتة بمصدر واحد للحقيقة. تجمع اللوحة الأحداث المهمة، تكشف التعطل مبكرًا، وتمنح كل فريق منظورًا مناسبًا لدوره.\n\nالأرقام والنتائج ستضاف عند استبدال المشروع التجريبي بدراسة حالة حقيقية.",
-      },
-      en: {
-        title: "Pulse Ops",
-        summary:
-          "An operations dashboard turning daily data into clear priorities for fast-moving teams.",
-        body: "The goal was to replace fragmented spreadsheets with one source of truth. The dashboard surfaces important events, reveals blockers early, and gives each team a view aligned to its role.\n\nMetrics and outcomes will be added when this sample is replaced with a real case study.",
-      },
-    },
-  },
-] as const;
-
-type ArticleTranslation = {
-  slug: string;
-  title: string;
-  excerpt: string;
-  body: string;
-};
-export type Article = {
-  id: string;
-  date: string;
-  readingTime: number;
-  category: Record<Locale, string>;
-  translations: Partial<Record<Locale, ArticleTranslation>>;
-};
-
-export const articles: Article[] = [
-  {
-    id: "systems-that-scale",
-    date: "2026-09-18",
-    readingTime: 7,
-    category: { ar: "هندسة", en: "Engineering" },
-    translations: {
-      ar: {
-        slug: "systems-that-scale-ar",
-        title: "كيف تبني نظامًا ينمو بدون أن يبطئ الفريق",
-        excerpt:
-          "مبادئ عملية لاتخاذ قرارات تقنية تخدم المنتج اليوم ولا تعرقل الغد.",
-        body: "## التوسع ليس رقمًا فقط\n\nالنظام القابل للتوسع لا يعني خوادم أكثر فقط؛ بل يعني أن الفريق يستطيع إضافة قيمة بدون أن تزداد تكلفة كل تغيير.\n\n### ابدأ بالحدود الواضحة\n\nقسّم المسؤوليات حول احتياجات المنتج الفعلية، وليس حول موضة تقنية. اجعل البيانات والعقود بين الأجزاء واضحة وقابلة للاختبار.\n\n> أفضل بنية هي التي تجعل القرار التالي أسهل، لا التي تستعرض أكبر عدد من الأدوات.\n\nراجع القياسات مبكرًا، وثّق القرارات المهمة، واترك مساحة لتغيير الاتجاه.",
-      },
-      en: {
-        slug: "systems-that-scale",
-        title: "Building systems that scale without slowing the team",
-        excerpt:
-          "Practical principles for technical decisions that serve today’s product without blocking tomorrow.",
-        body: "## Scale is not just a number\n\nA scalable system is not only about more servers. It means the team can keep delivering value without every change becoming more expensive.\n\n### Start with clear boundaries\n\nDivide responsibilities around real product needs, not technical fashion. Keep data and contracts explicit and testable.\n\n> The best architecture makes the next decision easier instead of showcasing the most tools.\n\nMeasure early, document important decisions, and leave room to change direction.",
-      },
-    },
-  },
-  {
-    id: "arabic-product-guide",
-    date: "2026-08-04",
-    readingTime: 5,
-    category: { ar: "منتج", en: "Product" },
-    translations: {
-      ar: {
-        slug: "دليل-بناء-نسخة-اولى",
-        title: "دليل عملي لبناء نسخة أولى لا تبدو مؤقتة",
-        excerpt:
-          "كيف تختصر النطاق وتحافظ في الوقت نفسه على تجربة تستحق ثقة المستخدم.",
-        body: "## النسخة الأولى وعد صغير\n\nلا يجب أن تفعل كل شيء، لكنها يجب أن تنجز المهمة الأساسية بإتقان. ابدأ بسؤال واحد: ما النتيجة التي سيعود المستخدم من أجلها؟\n\n### احذف قبل أن تضيف\n\nكل خطوة إضافية تستهلك انتباه المستخدم ووقت الفريق. احتفظ فقط بما يدعم النتيجة الرئيسية، ثم اجعل التفاصيل القليلة المتبقية ممتازة.\n\nالجودة في النسخة الأولى تأتي من وضوح الاختيار، لا من كثرة الخصائص.",
-      },
-    },
-  },
-  {
-    id: "api-decisions",
-    date: "2026-07-12",
-    readingTime: 6,
-    category: { ar: "Back-end", en: "Back-end" },
-    translations: {
-      en: {
-        slug: "api-decisions-that-age-well",
-        title: "API decisions that age well",
-        excerpt:
-          "A compact framework for interfaces that stay understandable as products and teams evolve.",
-        body: "## Design for the conversation\n\nAn API is a conversation between systems and the people maintaining them. Clear naming, predictable errors, and explicit ownership matter more than clever abstractions.\n\n### Make change visible\n\nVersion only when the contract truly breaks. Prefer additive changes, validate inputs at the boundary, and return errors that help the caller recover.\n\nA small consistent API is easier to grow than a flexible interface nobody fully understands.",
-      },
-    },
-  },
-];
-
-export function getArticleTranslation(article: Article, locale: Locale) {
-  return (
-    article.translations[locale] ??
-    article.translations[locale === "ar" ? "en" : "ar"]!
-  );
-}
+export const projectSchema = z.object({
+  slug: z.string().min(1),
+  index: z.string(),
+  year: z.string(),
+  category: localizedText,
+  color: z.enum(["cyan", "violet", "amber"]),
+  stack: z.array(z.string()),
+  content: z.object({
+    ar: projectTranslationSchema,
+    en: projectTranslationSchema,
+  }),
+});
+export type Project = z.infer<typeof projectSchema>;
+export const articleTranslationSchema = z.object({
+  slug: z.string().min(1),
+  title: z.string(),
+  excerpt: z.string(),
+  body: z.string(),
+});
+export const articleSchema = z.object({
+  id: z.string(),
+  date: z.string(),
+  readingTime: z.number().int().positive(),
+  category: localizedText,
+  translations: z
+    .object({
+      ar: articleTranslationSchema.optional(),
+      en: articleTranslationSchema.optional(),
+    })
+    .refine(
+      (value) => Boolean(value.ar || value.en),
+      "An article must have a published translation",
+    ),
+});
+export type Article = z.infer<typeof articleSchema>;
 
 export function getArticleLocale(
   article: Article,
   requestedLocale: Locale,
 ): Locale {
-  return article.translations[requestedLocale]
-    ? requestedLocale
-    : requestedLocale === "ar"
-      ? "en"
-      : "ar";
+  if (article.translations[requestedLocale]) return requestedLocale;
+  const otherLocale = requestedLocale === "ar" ? "en" : "ar";
+  if (!article.translations[otherLocale])
+    throw new Error("Article has no published translation");
+  return otherLocale;
 }
-
-export function findArticleBySlug(slug: string) {
-  return articles.find((article) =>
-    Object.values(article.translations).some(
-      (translation) => translation?.slug === slug,
-    ),
-  );
+export function getArticleTranslation(article: Article, locale: Locale) {
+  return article.translations[getArticleLocale(article, locale)]!;
 }

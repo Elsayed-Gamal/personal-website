@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import type { Article, Locale } from "@/lib/content";
-import { getArticleLocale, getArticleTranslation, ui } from "@/lib/content";
+import { getArticleLocale, getArticleTranslation } from "@/lib/content";
+import { getSiteUI } from "@/lib/db/content";
 
-export function ArticleCard({
+export async function ArticleCard({
   article,
   locale,
 }: {
@@ -13,6 +14,7 @@ export function ArticleCard({
   const articleLocale = getArticleLocale(article, locale);
   const content = getArticleTranslation(article, locale);
   const unavailable = articleLocale !== locale;
+  const t = await getSiteUI(locale);
 
   return (
     <Link
@@ -24,12 +26,12 @@ export function ArticleCard({
           {article.category[locale]} / {article.date.slice(0, 4)}
         </span>
         <span>
-          {article.readingTime} {ui[locale].minutes}
+          {article.readingTime} {t.minutes}
         </span>
       </div>
       {unavailable ? (
         <span className="mt-5 w-fit rounded-full border border-[#245bc4]/25 bg-[#245bc4]/8 px-3 py-1 text-[10px] text-[#245bc4]">
-          {ui[locale].originalLanguage}
+          {t.originalLanguage}
         </span>
       ) : null}
       <h3
@@ -47,7 +49,7 @@ export function ArticleCard({
         {content.excerpt}
       </p>
       <span className="mt-8 flex items-center justify-between text-xs font-semibold tracking-[.08em] uppercase">
-        {ui[locale].readArticle}
+        {t.readArticle}
         <span className="grid size-9 place-items-center rounded-full border border-[#dce3e9] transition group-hover:border-[#245bc4] group-hover:bg-[#245bc4] group-hover:text-white">
           <ArrowUpRight className="size-4 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5 rtl:group-hover:-translate-x-0.5" />
         </span>

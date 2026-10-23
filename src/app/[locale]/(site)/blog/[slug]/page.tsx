@@ -3,21 +3,8 @@ import { redirect, notFound } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
 import remarkGfm from "remark-gfm";
-import {
-  articles,
-  findArticleBySlug,
-  getArticleLocale,
-  isLocale,
-} from "@/lib/content";
-
-export function generateStaticParams() {
-  return articles.flatMap((article) =>
-    Object.entries(article.translations).map(([locale, translation]) => ({
-      locale,
-      slug: translation!.slug,
-    })),
-  );
-}
+import { getArticleLocale, isLocale } from "@/lib/content";
+import { findArticleBySlug, getSiteContent } from "@/lib/db/content";
 
 export default async function ArticlePage({
   params,
@@ -30,24 +17,16 @@ export default async function ArticlePage({
   } catch {
     notFound();
   }
-  const article = findArticleBySlug(slug);
+  const [article, copy] = await Promise.all([
+    findArticleBySlug(slug),
+    getSiteContent("article_detail", locale),
+  ]);
   if (!article) notFound();
 
   const targetLocale = getArticleLocale(article, locale);
   const translation = article.translations[targetLocale]!;
   if (targetLocale !== locale || translation.slug !== slug)
     redirect(`/${targetLocale}/blog/${encodeURIComponent(translation.slug)}`);
-
-  const copy =
-    locale === "ar"
-      ? {
-          back: "العودة للمقالات",
-          note: "مقال تجريبي يوضح قالب القراءة قبل إضافة المحتوى النهائي.",
-        }
-      : {
-          back: "Back to writing",
-          note: "Sample writing that demonstrates the reading template before final content is added.",
-        };
 
   return (
     <article className="container-shell py-16 sm:py-24">
@@ -64,7 +43,9 @@ export default async function ArticlePage({
             <span>·</span>
             <time>{article.date}</time>
             <span>·</span>
-            <span>{article.readingTime} min</span>
+            <span>
+              {article.readingTime} {copy.minutes}
+            </span>
           </div>
           <h1 className="mt-6 text-4xl leading-tight font-semibold tracking-[-.05em] text-balance sm:text-6xl">
             {translation.title}
