@@ -36,12 +36,10 @@ describe("inbox authorization and mutations", () => {
       eq: vi.fn().mockReturnThis(),
       is: vi.fn().mockReturnThis(),
       select: vi.fn().mockReturnThis(),
-      maybeSingle: vi
-        .fn()
-        .mockResolvedValue({
-          data: { read_at: "2026-10-24T00:00:00Z" },
-          error: null,
-        }),
+      maybeSingle: vi.fn().mockResolvedValue({
+        data: { read_at: "2026-10-24T00:00:00Z" },
+        error: null,
+      }),
     };
     mock.client.mockResolvedValue({ from: vi.fn().mockReturnValue(q) });
     expect(await setMessageRead({ ...payload, read: true })).toMatchObject({
@@ -51,6 +49,8 @@ describe("inbox authorization and mutations", () => {
     expect(q.is).toHaveBeenCalledWith("read_at", null);
     expect(q.eq).toHaveBeenCalledWith("id", payload.id);
     expect(q.update).toHaveBeenCalledWith({ read_at: expect.any(String) });
+    expect(mock.revalidate).toHaveBeenCalledWith("/admin/messages");
+    expect(mock.revalidate).toHaveBeenCalledWith("/admin/dashboard");
     q.maybeSingle.mockResolvedValue({ data: null, error: null });
     expect((await setMessageRead({ ...payload, read: false })).ok).toBe(false);
   });
@@ -66,6 +66,8 @@ describe("inbox authorization and mutations", () => {
     };
     mock.client.mockResolvedValue({ from: vi.fn().mockReturnValue(q) });
     expect(await deleteMessage(payload)).toEqual({ ok: true });
+    expect(mock.revalidate).toHaveBeenCalledWith("/admin/messages");
+    expect(mock.revalidate).toHaveBeenCalledWith("/admin/dashboard");
     expect(q.eq).toHaveBeenCalledWith("id", payload.id);
     expect(q.is).toHaveBeenCalledWith("read_at", null);
     expect((await deleteMessage({ id: "invalid" })).ok).toBe(false);

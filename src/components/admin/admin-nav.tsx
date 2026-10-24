@@ -1,5 +1,5 @@
 "use client";
-import Link from "next/link";
+import { AdminLink as Link } from "./admin-link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, Files, Mail, Settings } from "lucide-react";
 const items = [

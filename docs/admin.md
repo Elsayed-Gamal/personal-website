@@ -24,6 +24,8 @@ The application provides password login and local-session logout, without public
 
 ## Verification
 
+See [admin navigation performance](admin-performance.md) for intent-based prefetch, reduced list payloads and opt-in production timing. The ordinary route loading spinner remains; no link-pending overlay is used.
+
 Run `npm test`, `npm run lint`, `npm run typecheck`, `npm run build`, then `PLAYWRIGHT_CHANNEL=chrome npm run test:e2e`. Admin tests cover the authorization allowlist, unconfirmed/anonymous/non-owner denial, all protected routes, malformed session cookies, noindex/no-store, and the mobile login view. A real successful login/logout needs the owner account to exist and its password; it cannot be verified until that setup is complete.
 
 SSR reference: https://supabase.com/docs/guides/auth/server-side/creating-a-client

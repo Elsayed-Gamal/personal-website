@@ -9,9 +9,12 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { deleteContent } from "@/app/admin/(protected)/content/actions";
+import { loadContent } from "@/app/admin/(protected)/content/read-actions";
 import {
   entryTitle,
   newContentEntry,
+  contentSummarySchema,
+  type ContentSummary,
   type ContentEntry,
   type ContentKind,
 } from "@/lib/admin/content";
@@ -20,7 +23,7 @@ import { ContentEditor } from "./content-editor";
 export function ContentManager({
   initialEntries,
 }: {
-  initialEntries: ContentEntry[];
+  initialEntries: ContentSummary[];
 }) {
   const [entries, setEntries] = useState(initialEntries);
   const [kind, setKind] = useState<ContentKind>("article");
@@ -28,11 +31,12 @@ export function ContentManager({
   const [status, setStatus] = useState("all");
   const [page, setPage] = useState(1);
   const [editing, setEditing] = useState<ContentEntry | null>(null);
-  const [removing, setRemoving] = useState<ContentEntry | null>(null);
+  const [removing, setRemoving] = useState<ContentSummary | null>(null);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(
     null,
   );
   const [pending, startTransition] = useTransition();
+  const [opening, startOpening] = useTransition();
   const dialog = useRef<HTMLDialogElement>(null);
   useEffect(() => {
     if (removing) dialog.current?.showModal();
@@ -65,15 +69,16 @@ export function ContentManager({
         entry={editing}
         onClose={() => setEditing(null)}
         onSaved={(saved) => {
+          const summary = contentSummarySchema.parse(saved);
           setEntries((items) => {
             const exists = items.some(
               (e) => e.kind === saved.kind && e.id === saved.id,
             );
             return exists
               ? items.map((e) =>
-                  e.kind === saved.kind && e.id === saved.id ? saved : e,
+                  e.kind === saved.kind && e.id === saved.id ? summary : e,
                 )
-              : [saved, ...items];
+              : [summary, ...items];
           });
           setEditing(saved);
         }}
@@ -91,6 +96,7 @@ export function ContentManager({
             <button
               key={value}
               type="button"
+              disabled={opening}
               aria-pressed={kind === value}
               onClick={() => {
                 setKind(value);
@@ -107,6 +113,7 @@ export function ContentManager({
         </div>
         <button
           className="admin-button content-add"
+          disabled={opening}
           onClick={() => {
             setMessage(null);
             setEditing(newContentEntry(kind));
@@ -163,6 +170,11 @@ export function ContentManager({
           {message.text}
         </p>
       )}
+      {opening && (
+        <p role="status" className="admin-muted">
+          جارٍ تحميل بيانات المحتوى…
+        </p>
+      )}
       {visible.length ? (
         <div className="content-list">
           {visible.map((entry) => (
@@ -217,7 +229,11 @@ export function ContentManager({
                           "/" +
                           (entry.kind === "article"
                             ? "blog/" +
-                              encodeURIComponent("slug" in t ? t.slug : "")
+                              encodeURIComponent(
+                                "slug" in t && typeof t.slug === "string"
+                                  ? t.slug
+                                  : "",
+                              )
                             : "work/" + encodeURIComponent(entry.id))
                         }
                         target="_blank"
@@ -229,9 +245,24 @@ export function ContentManager({
                       </a>
                     ))}
                 <button
+                  disabled={opening || pending}
                   onClick={() => {
                     setMessage(null);
-                    setEditing(entry);
+                    startOpening(async () => {
+                      try {
+                        const result = await loadContent({
+                          kind: entry.kind,
+                          id: entry.id,
+                        });
+                        if (result.ok) setEditing(result.entry);
+                        else setMessage({ ok: false, text: result.message });
+                      } catch {
+                        setMessage({
+                          ok: false,
+                          text: "تعذر تحميل المحتوى. حاول مرة أخرى.",
+                        });
+                      }
+                    });
                   }}
                   aria-label={"تعديل " + entryTitle(entry)}
                 >
@@ -239,6 +270,7 @@ export function ContentManager({
                 </button>
                 <button
                   className="content-danger"
+                  disabled={opening || pending}
                   onClick={() => {
                     setMessage(null);
                     setRemoving(entry);

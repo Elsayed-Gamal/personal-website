@@ -40,6 +40,7 @@ function refreshContent() {
   revalidatePath("/ar", "layout");
   revalidatePath("/en", "layout");
   revalidatePath("/admin/content");
+  revalidatePath("/admin/dashboard");
 }
 export async function saveContent(input: unknown): Promise<ContentResult> {
   await requireAdmin();

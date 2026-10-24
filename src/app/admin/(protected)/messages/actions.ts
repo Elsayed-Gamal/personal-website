@@ -33,6 +33,7 @@ export async function setMessageRead(input: unknown): Promise<MessageResult> {
     if (error) return { ok: false, message: "تعذر تحديث حالة الرسالة." };
     if (!data) return stale;
     revalidatePath("/admin/messages");
+    revalidatePath("/admin/dashboard");
     return { ok: true, readAt: data.read_at as InboxMessage["read_at"] };
   } catch {
     return { ok: false, message: "تعذر الاتصال. حاول مجددًا." };
@@ -55,6 +56,7 @@ export async function deleteMessage(input: unknown): Promise<MessageResult> {
     if (error) return { ok: false, message: "تعذر حذف الرسالة." };
     if (!data) return stale;
     revalidatePath("/admin/messages");
+    revalidatePath("/admin/dashboard");
     return { ok: true };
   } catch {
     return { ok: false, message: "تعذر الاتصال. حاول مجددًا." };

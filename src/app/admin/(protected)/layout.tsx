@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ExternalLink, LogOut } from "lucide-react";
 import { requireAdmin } from "@/lib/auth/admin";
 import { AdminNav } from "@/components/admin/admin-nav";
+import { AdminLink } from "@/components/admin/admin-link";
 import { logout } from "@/app/admin/actions";
 export default async function ProtectedLayout({
   children,
@@ -15,12 +16,12 @@ export default async function ProtectedLayout({
         انتقل إلى المحتوى
       </a>
       <aside className="admin-sidebar">
-        <Link className="admin-brand" href="/admin/dashboard">
+        <AdminLink className="admin-brand" href="/admin/dashboard">
           <span>EG</span>
           <div>
             إدارة الموقع<small>مساحتك الخاصة</small>
           </div>
-        </Link>
+        </AdminLink>
         <AdminNav />
         <Link className="admin-site-link" href="/ar">
           <ExternalLink size={18} aria-hidden="true" /> عرض الموقع

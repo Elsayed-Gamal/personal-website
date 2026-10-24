@@ -42,6 +42,8 @@ describe("content actions", () => {
     });
     expect(mock.revalidate).toHaveBeenCalledWith("/ar", "layout");
     expect(mock.revalidate).toHaveBeenCalledWith("/en", "layout");
+    expect(mock.revalidate).toHaveBeenCalledWith("/admin/content");
+    expect(mock.revalidate).toHaveBeenCalledWith("/admin/dashboard");
   });
   it("reports duplicate slugs, stale writes, and errors without losing drafts", async () => {
     mock.rpc.mockResolvedValue({ data: null, error: { code: "23505" } });
@@ -59,6 +61,7 @@ describe("content actions", () => {
   it("deletes only the requested kind, identity and loaded version", async () => {
     mock.rpc.mockResolvedValue({ error: null });
     expect(await deleteContent(article)).toEqual({ ok: true });
+    expect(mock.revalidate).toHaveBeenCalledWith("/admin/dashboard");
     expect(mock.rpc).toHaveBeenCalledWith("delete_site_entry", {
       entry_kind: "article",
       entry_id: article.id,

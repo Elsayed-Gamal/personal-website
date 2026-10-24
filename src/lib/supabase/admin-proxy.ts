@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseConfig } from "./config";
 import { isAdminUser } from "@/lib/auth/admin-access";
+import { measureAdminOperation } from "@/lib/admin/performance";
 
 export async function adminProxy(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -26,7 +27,9 @@ export async function adminProxy(request: NextRequest) {
       },
     },
   });
-  const { data, error } = await client.auth.getUser();
+  const { data, error } = await measureAdminOperation("proxy.auth", () =>
+    client.auth.getUser(),
+  );
   const allowed = !error && isAdminUser(data.user);
   const login = request.nextUrl.pathname === "/admin/login";
   if ((!allowed && !login) || (allowed && login)) {

@@ -56,6 +56,49 @@ export type ContentEntry = z.infer<typeof contentEntrySchema>;
 export type ArticleEdit = z.infer<typeof articleEditSchema>;
 export type ProjectEdit = z.infer<typeof projectEditSchema>;
 export type ContentKind = ContentEntry["kind"];
+export const contentIdentitySchema = z.object({
+  kind: z.enum(["article", "project"]),
+  id: contentSlug,
+});
+// Lists never carry editable bodies. A complete entry is fetched on edit.
+export const contentSummarySchema = z.discriminatedUnion("kind", [
+  articleEditSchema
+    .pick({
+      kind: true,
+      id: true,
+      updated_at: true,
+      published: true,
+      date: true,
+    })
+    .extend({
+      translations: z.array(
+        articleEditSchema.shape.translations.element.pick({
+          locale: true,
+          slug: true,
+          title: true,
+          published: true,
+        }),
+      ),
+    }),
+  projectEditSchema
+    .pick({
+      kind: true,
+      id: true,
+      updated_at: true,
+      published: true,
+      year: true,
+      sort_order: true,
+    })
+    .extend({
+      translations: z.array(
+        projectEditSchema.shape.translations.element.pick({
+          locale: true,
+          title: true,
+        }),
+      ),
+    }),
+]);
+export type ContentSummary = z.infer<typeof contentSummarySchema>;
 export const saveContentSchema = contentEntrySchema.superRefine(
   (entry, ctx) => {
     const error = (path: (string | number)[], message: string) =>
@@ -114,7 +157,7 @@ export type ContentResult =
       conflict?: boolean;
       fields?: Record<string, string>;
     };
-export function entryTitle(entry: ContentEntry) {
+export function entryTitle(entry: ContentEntry | ContentSummary) {
   return (
     entry.translations.find((t) => t.locale === "ar" && t.title)?.title ||
     entry.translations.find((t) => t.title)?.title ||

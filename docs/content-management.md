@@ -1,6 +1,6 @@
 # Content management
 
-`/admin/content` provides article/project lists, title/slug search, publication filters, client-side pagination, creation/editing, and confirmed permanent deletion. The server loader fetches database rows in batches so the Data API's row limit does not silently truncate the list. The current portfolio is small; full bodies are loaded with the lists. Larger libraries should move search/pagination and detail loading to the server.
+`/admin/content` provides article/project lists, title/slug search, publication filters, client-side pagination, creation/editing, and confirmed permanent deletion. The server loader fetches summary rows in batches so the Data API's row limit does not silently truncate the list. Full bodies are fetched only when opening an editor, through an owner-authorized Server Action. Larger libraries should additionally move search/pagination to server queries. See [navigation performance](admin-performance.md).
 
 Articles support one or two languages. Each translation has a distinct slug and publication flag; a published article requires at least one complete published translation. Hidden translations and draft articles remain unavailable to public readers. Empty category translations fall back to the provided language. Markdown previews use the same sanitized renderer as public articles. Existing translation slugs are immutable to protect links. Removing a translation removes its URL on save.
 

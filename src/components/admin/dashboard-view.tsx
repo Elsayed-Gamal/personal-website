@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { AdminLink as Link } from "./admin-link";
 import {
   FileText,
   FolderKanban,
