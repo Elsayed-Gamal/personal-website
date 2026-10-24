@@ -1,37 +1,62 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useState, type ComponentProps } from "react";
 
-// Warm the complete dynamic page on intent, not just its loading boundary.
-// Next owns expiry and invalidation; no custom cache of private page data.
 export function AdminLink({
   children,
-  onMouseEnter,
-  onFocus,
-  onTouchStart,
-  prefetch,
+  onClick,
   ...props
 }: ComponentProps<typeof Link>) {
-  const [intent, setIntent] = useState(false);
+  const [pendingFrom, setPendingFrom] = useState<string | null>(null);
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const search = searchParams.toString();
+  const currentRoute = `${pathname}${search ? `?${search}` : ""}`;
+
+  if (pendingFrom !== null && pendingFrom !== currentRoute) {
+    setPendingFrom(null);
+  }
+  const navigating = pendingFrom === currentRoute;
+
   return (
     <Link
       {...props}
-      prefetch={prefetch ?? intent}
-      onMouseEnter={(event) => {
-        onMouseEnter?.(event);
-        if (!event.defaultPrevented) setIntent(true);
-      }}
-      onFocus={(event) => {
-        onFocus?.(event);
-        if (!event.defaultPrevented) setIntent(true);
-      }}
-      onTouchStart={(event) => {
-        onTouchStart?.(event);
-        if (!event.defaultPrevented) setIntent(true);
+      prefetch={false}
+      aria-busy={navigating || undefined}
+      onClick={(event) => {
+        onClick?.(event);
+        if (
+          event.defaultPrevented ||
+          event.button !== 0 ||
+          event.metaKey ||
+          event.ctrlKey ||
+          event.shiftKey ||
+          event.altKey ||
+          event.currentTarget.target ||
+          event.currentTarget.hasAttribute("download")
+        ) {
+          return;
+        }
+        const destination = new URL(event.currentTarget.href);
+        if (
+          destination.origin === window.location.origin &&
+          `${destination.pathname}${destination.search}` !== currentRoute
+        ) {
+          setPendingFrom(currentRoute);
+        }
       }}
     >
       {children}
+      {navigating && (
+        <>
+          <span className="admin-link-pending-spinner" aria-hidden="true" />
+          <span className="content-sr-only" role="status">
+            جارٍ الانتقال…
+          </span>
+        </>
+      )}
     </Link>
   );
 }
