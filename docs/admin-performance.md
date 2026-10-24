@@ -1,6 +1,6 @@
 # Admin navigation performance
 
-`AdminLink` shows a small inline spinner immediately after an eligible internal link click, then clears it when the route changes; the ordinary `loading.tsx` route fallback remains for page loading. The click indicator improves immediate feedback but does not make server or database work faster. Prefetch is explicitly disabled on these links, so opening an admin destination starts its request only after navigation. There is no custom private-data cache or authentication bypass.
+`AdminLink` uses Next.js `useLinkStatus` to show a small inline spinner while a link navigation is pending; the ordinary `loading.tsx` route fallback remains for page loading. Prefetch is explicitly disabled on these links, so opening an admin destination starts its request only after navigation. The indicator reports navigation state but does not make server or database work faster. There is no custom private-data cache or authentication bypass.
 
 The content list selects summary columns and translation titles/slugs/publication flags, not Markdown bodies, excerpts or project summaries. Opening an editor calls the authorized `loadContent` action to fetch one complete entry. An error or deleted entry leaves the list visible; incomplete summaries never reach the editor/save action. Deletion still uses the list's version, and editing uses the freshly fetched version. Summary rows are still fetched in batches; search and pagination remain client-side.
 

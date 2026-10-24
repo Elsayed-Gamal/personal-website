@@ -2,9 +2,8 @@
 import { createElement, type ReactNode } from "react";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
-const navigationState = vi.hoisted(() => ({
-  pathname: "/admin/dashboard",
-  search: "",
+const linkStatus = vi.hoisted(() => ({
+  pending: false,
 }));
 vi.mock("next/link", () => ({
   default: ({
@@ -29,16 +28,12 @@ vi.mock("next/link", () => ({
       },
       children,
     ),
-}));
-vi.mock("next/navigation", () => ({
-  usePathname: () => navigationState.pathname,
-  useSearchParams: () => new URLSearchParams(navigationState.search),
+  useLinkStatus: () => linkStatus,
 }));
 import { AdminLink } from "../../src/components/admin/admin-link";
 afterEach(() => {
   cleanup();
-  navigationState.pathname = "/admin/dashboard";
-  navigationState.search = "";
+  linkStatus.pending = false;
 });
 
 it("keeps prefetch disabled on hover, focus and touch", () => {
@@ -59,43 +54,36 @@ it("keeps prefetch disabled on hover, focus and touch", () => {
   expect(screen.queryByRole("status")).toBeNull();
 });
 
-it("shows immediate navigation feedback and clears it when the route changes", () => {
+it("shows Next.js link pending feedback and clears it when navigation completes", () => {
   const { rerender } = render(
     createElement(AdminLink, { href: "/admin/messages" }, "الرسائل"),
   );
   const link = screen.getByRole("link");
 
-  fireEvent.click(link);
-
-  expect(link.getAttribute("aria-busy")).toBe("true");
+  expect(screen.queryByRole("status")).toBeNull();
+  linkStatus.pending = true;
+  rerender(createElement(AdminLink, { href: "/admin/messages" }, "الرسائل"));
   expect(screen.getByRole("status").textContent).toBe("جارٍ الانتقال…");
+  expect(screen.getByRole("status").getAttribute("aria-busy")).toBe("true");
   expect(link.querySelector(".admin-link-pending-spinner")).not.toBeNull();
 
-  navigationState.pathname = "/admin/messages";
+  linkStatus.pending = false;
   rerender(createElement(AdminLink, { href: "/admin/messages" }, "الرسائل"));
 
   expect(screen.queryByRole("status")).toBeNull();
-  expect(screen.getByRole("link").hasAttribute("aria-busy")).toBe(false);
+  expect(screen.getByRole("link").querySelector(".admin-link-pending-spinner"))
+    .toBeNull();
 });
 
-it("does not show navigation feedback for prevented, modified, or external clicks", () => {
-  const onClick = vi.fn((event: React.MouseEvent) => event.preventDefault());
-  const { rerender } = render(
+it("keeps the existing click handler and disables link prefetch", () => {
+  const onClick = vi.fn();
+  render(
     createElement(AdminLink, { href: "/admin/messages", onClick }, "الرسائل"),
   );
   const link = screen.getByRole("link");
 
   fireEvent.click(link);
   expect(onClick).toHaveBeenCalledOnce();
-  expect(screen.queryByRole("status")).toBeNull();
-
-  rerender(createElement(AdminLink, { href: "/admin/messages" }, "الرسائل"));
-  fireEvent.click(screen.getByRole("link"), { ctrlKey: true });
-  expect(screen.queryByRole("status")).toBeNull();
-
-  rerender(
-    createElement(AdminLink, { href: "https://example.com/admin" }, "خارجي"),
-  );
-  fireEvent.click(screen.getByRole("link"));
+  expect(link.getAttribute("data-prefetch")).toBe("false");
   expect(screen.queryByRole("status")).toBeNull();
 });
