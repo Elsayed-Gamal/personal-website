@@ -1,6 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-const mock = vi.hoisted(() => ({ client: vi.fn(), rpc: vi.fn() }));
+const mock = vi.hoisted(() => ({
+  client: vi.fn(),
+  rpc: vi.fn(),
+  notify: vi.fn(),
+}));
 vi.mock("@/lib/supabase/server", () => ({ createContentClient: mock.client }));
+vi.mock("@/lib/email/contact-notification", () => ({
+  sendContactNotification: mock.notify,
+}));
 import { submitContact } from "../../src/actions/contact";
 import { contactSubmissionSchema } from "../../src/lib/contact";
 const payload = {
@@ -14,6 +21,7 @@ const payload = {
 beforeEach(() => {
   vi.resetAllMocks();
   mock.client.mockReturnValue({ rpc: mock.rpc });
+  mock.notify.mockResolvedValue("sent");
 });
 describe("public contact submission", () => {
   it("validates inputs without querying and normalizes the email", async () => {
@@ -34,6 +42,7 @@ describe("public contact submission", () => {
       status: "sent",
     });
     expect(mock.client).not.toHaveBeenCalled();
+    expect(mock.notify).not.toHaveBeenCalled();
   });
   it("passes only allowed fields and a stable retry id to the bounded RPC", async () => {
     mock.rpc.mockResolvedValue({ data: "sent", error: null });
@@ -45,10 +54,32 @@ describe("public contact submission", () => {
       p_message: payload.message,
       p_locale: payload.locale,
     });
+    expect(mock.notify).toHaveBeenCalledWith({
+      requestId: payload.requestId,
+      name: payload.name,
+      email: payload.email,
+      message: payload.message,
+      locale: payload.locale,
+    });
+  });
+
+  it("keeps a stored message successful when notification delivery fails", async () => {
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    mock.rpc.mockResolvedValue({ data: "sent", error: null });
+    mock.notify.mockRejectedValue(new Error("provider unavailable"));
+
+    expect(await submitContact(payload)).toEqual({ status: "sent" });
+    expect(consoleError).toHaveBeenCalledWith(
+      "Contact notification delivery failed.",
+    );
+    consoleError.mockRestore();
   });
   it("reports rate limits and failures without claiming delivery", async () => {
     mock.rpc.mockResolvedValue({ data: "rate_limited", error: null });
     expect(await submitContact(payload)).toEqual({ status: "rate_limited" });
+    expect(mock.notify).not.toHaveBeenCalled();
     mock.rpc.mockResolvedValue({
       data: null,
       error: { message: "secret database details" },
