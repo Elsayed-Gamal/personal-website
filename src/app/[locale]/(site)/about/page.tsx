@@ -3,6 +3,13 @@ import { ArrowUpRight, Code2, Compass, Gauge, Workflow } from "lucide-react";
 import { notFound } from "next/navigation";
 import { isLocale } from "@/lib/content";
 import { getSiteContent } from "@/lib/db/content";
+import { getPageMetadata } from "@/lib/db/seo";
+
+export async function generateMetadata({
+  params,
+}: PageProps<"/[locale]/about">) {
+  return getPageMetadata((await params).locale, "about");
+}
 
 const valueIcons = {
   compass: Compass,

@@ -2,7 +2,26 @@ import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { notFound } from "next/navigation";
 import { isLocale } from "@/lib/content";
-import { getProjectBySlug, getSiteContent } from "@/lib/db/content";
+import { getProjectBySlug, getSiteContent, getSiteUI } from "@/lib/db/content";
+import { buildSeoMetadata } from "@/lib/seo";
+
+export async function generateMetadata({
+  params,
+}: PageProps<"/[locale]/work/[slug]">) {
+  const { locale, slug } = await params;
+  if (!isLocale(locale)) notFound();
+  const [project, ui] = await Promise.all([
+    getProjectBySlug(slug),
+    getSiteUI(locale),
+  ]);
+  if (!project) notFound();
+  const content = project.content[locale];
+  return buildSeoMetadata(ui, locale, {
+    title: content.title,
+    description: content.summary,
+    path: `/${locale}/work/${encodeURIComponent(project.slug)}`,
+  });
+}
 
 export default async function ProjectPage({
   params,

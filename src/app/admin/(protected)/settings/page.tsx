@@ -8,7 +8,7 @@ export default async function SettingsPage() {
     <>
       <AdminHeading
         title="إعدادات الموقع"
-        description="حدّث هوية موقعك ومحتوى الصفحة الرئيسية بالعربية والإنجليزية."
+        description="حدّث هوية موقعك وإعدادات SEO ومحتوى الصفحة الرئيسية بالعربية والإنجليزية."
       />
       <SettingsEditor records={records} />
     </>

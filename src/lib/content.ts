@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { seoSchema } from "@/lib/seo";
 
 export const locales = ["ar", "en"] as const;
 export type Locale = (typeof locales)[number];
@@ -8,6 +9,7 @@ export function isLocale(value: string): value is Locale {
 
 const localizedText = z.object({ ar: z.string(), en: z.string() });
 export const siteUISchema = z.object({
+  seo: seoSchema.optional(),
   nav: z.object({
     home: z.string(),
     services: z.string(),

@@ -15,6 +15,7 @@ vi.mock("@/app/admin/(protected)/settings/actions", () => ({
   saveSettings: mock.save,
 }));
 import { SettingsEditor } from "../../src/components/admin/settings-editor";
+import { emptySeo } from "../../src/lib/seo";
 
 const records = (["ui", "home"] as const).flatMap((key) =>
   (["ar", "en"] as const).map((locale) => ({
@@ -30,6 +31,58 @@ afterEach(() => {
   mock.save.mockReset();
 });
 describe("settings editor", () => {
+  it("edits localized SEO together with site settings and preserves unrelated fields", async () => {
+    const withSeo = records.map((row) =>
+      row.key === "ui"
+        ? { ...row, value: { ...row.value, seo: { ...emptySeo } } }
+        : row,
+    );
+    render(createElement(SettingsEditor, { records: withSeo }));
+    fireEvent.change(screen.getByLabelText("عنوان الموقع لمحركات البحث"), {
+      target: { value: "عنوان نتائج البحث" },
+    });
+    fireEvent.change(screen.getByLabelText("رابط الموقع الأساسي"), {
+      target: { value: "https://portfolio.example" },
+    });
+    mock.save.mockImplementation(async (input) => ({
+      ok: true,
+      record: {
+        key: input.key,
+        locale: input.locale,
+        value: input.value,
+        updated_at: "2026-10-24T00:00:00Z",
+      },
+    }));
+    fireEvent.click(screen.getByRole("button", { name: "حفظ التغييرات" }));
+    await waitFor(() =>
+      expect(screen.getByRole("status").textContent).toContain("تم حفظ"),
+    );
+    expect(mock.save).toHaveBeenCalledWith(
+      expect.objectContaining({
+        key: "ui",
+        locale: "ar",
+        value: expect.objectContaining({
+          brandName: seed.ui.ar.brandName,
+          seo: {
+            ...emptySeo,
+            title: "عنوان نتائج البحث",
+            siteUrl: "https://portfolio.example",
+          },
+        }),
+      }),
+    );
+    await waitFor(() =>
+      expect(
+        (screen.getByRole("button", { name: "English" }) as HTMLButtonElement)
+          .disabled,
+      ).toBe(false),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "English" }));
+    expect(
+      (screen.getByLabelText("عنوان الموقع لمحركات البحث") as HTMLInputElement)
+        .value,
+    ).toBe("");
+  });
   it("shows both languages and homepage groups, retaining drafts after a failed save", async () => {
     render(createElement(SettingsEditor, { records }));
     expect(
@@ -81,13 +134,15 @@ describe("settings editor", () => {
     await waitFor(() =>
       expect(screen.getByRole("status").textContent).toContain("تم حفظ"),
     );
-    expect(
-      (
-        screen.getByRole("button", {
-          name: "حفظ التغييرات",
-        }) as HTMLButtonElement
-      ).disabled,
-    ).toBe(true);
+    await waitFor(() =>
+      expect(
+        (
+          screen.getByRole("button", {
+            name: "حفظ التغييرات",
+          }) as HTMLButtonElement
+        ).disabled,
+      ).toBe(true),
+    );
     fireEvent.change(screen.getByLabelText("الاسم المعروض"), {
       target: { value: "تحديث آخر" },
     });

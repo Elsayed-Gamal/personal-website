@@ -4,7 +4,33 @@ import ReactMarkdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
 import remarkGfm from "remark-gfm";
 import { getArticleLocale, isLocale } from "@/lib/content";
-import { findArticleBySlug, getSiteContent } from "@/lib/db/content";
+import { findArticleBySlug, getSiteContent, getSiteUI } from "@/lib/db/content";
+import { buildSeoMetadata } from "@/lib/seo";
+
+export async function generateMetadata({
+  params,
+}: PageProps<"/[locale]/blog/[slug]">) {
+  const { locale, slug: routeSlug } = await params;
+  if (!isLocale(locale)) notFound();
+  let slug: string;
+  try {
+    slug = decodeURIComponent(routeSlug);
+  } catch {
+    notFound();
+  }
+  const article = await findArticleBySlug(slug);
+  if (!article) notFound();
+  const targetLocale = getArticleLocale(article, locale);
+  const translation = article.translations[targetLocale]!;
+  if (targetLocale !== locale || translation.slug !== slug)
+    redirect(`/${targetLocale}/blog/${encodeURIComponent(translation.slug)}`);
+  return buildSeoMetadata(await getSiteUI(locale), locale, {
+    title: translation.title,
+    description: translation.excerpt,
+    path: `/${locale}/blog/${encodeURIComponent(translation.slug)}`,
+    article: true,
+  });
+}
 
 export default async function ArticlePage({
   params,

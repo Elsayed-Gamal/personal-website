@@ -30,6 +30,8 @@ Publish both project translations before publishing a project (the present desig
 
 `scripts/seed-content.json` preserves the original projects and articles, while `scripts/page-content-seed.json` preserves the localized page copy. Neither file is a runtime fallback. The database contains 3 projects, 6 project translations, 3 articles, 4 article translations, and 16 site-content records. The page-content keys are `ui`, `home`, `about`, `contact`, `work`, `blog`, `project_detail`, and `article_detail`, each in Arabic and English.
 
+On 2026-10-25, the two existing `ui` rows were initialized with `value.seo`: `title`, `description`, `siteUrl`, `imageUrl`, `imageAlt`, and `twitterHandle`. These optional overrides start as empty strings, retaining the site's existing metadata fallbacks until edited. The exact idempotent data update is archived in `scripts/initialize-seo-settings.sql`; it preserves existing SEO values and all unrelated content. No new table, column, schema migration, or RLS change was needed. The existing owner-only settings policy covers SEO writes. Both initialized rows were verified through an anonymous-role read.
+
 ## Serving and verification
 
 Pages render on request and use uncached Supabase fetches, with request-level deduplication. Content edits and new slugs do not require a new build. Missing records return 404; database failures display an error rather than silently serving the seed. The proxy returns 503 if its article lookup fails.

@@ -6,6 +6,11 @@ import { ProjectCard } from "@/components/portfolio/project-card";
 import { ArticleCard } from "@/components/blog/article-card";
 import { isLocale } from "@/lib/content";
 import { getArticles, getHomeContent, getProjects } from "@/lib/db/content";
+import { getPageMetadata } from "@/lib/db/seo";
+
+export async function generateMetadata({ params }: PageProps<"/[locale]">) {
+  return getPageMetadata((await params).locale, "home");
+}
 
 const serviceIcons = {
   globe: Globe2,

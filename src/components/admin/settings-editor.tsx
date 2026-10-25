@@ -48,6 +48,11 @@ const labels: Record<string, string> = {
   journal: "أحدث المقالات",
   cta: "الدعوة للتواصل",
   button: "نص الزر",
+  seo: "إعدادات SEO والمشاركة",
+  siteUrl: "رابط الموقع الأساسي",
+  imageUrl: "رابط صورة المشاركة",
+  imageAlt: "وصف صورة المشاركة",
+  twitterHandle: "حساب X (Twitter)",
 };
 const icons = {
   globe: "موقع إلكتروني",
@@ -71,9 +76,21 @@ function Fields({
     const name = path.at(-1)!;
     const id = "setting-" + path.join("-");
     const error = errors["value." + path.join(".")];
-    const label = /^\d+$/.test(name)
-      ? "الميزة " + (Number(name) + 1)
-      : (labels[name] ?? name);
+    const isSeo = path[0] === "seo";
+    const isUrl = isSeo && ["siteUrl", "imageUrl"].includes(name);
+    const limit = isSeo
+      ? ({ title: 120, description: 320, imageAlt: 200, twitterHandle: 16 }[
+          name
+        ] ?? 2000)
+      : 2000;
+    const label =
+      isSeo && name === "title"
+        ? "عنوان الموقع لمحركات البحث"
+        : isSeo && name === "description"
+          ? "وصف الموقع لمحركات البحث"
+          : /^\d+$/.test(name)
+            ? "الميزة " + (Number(name) + 1)
+            : (labels[name] ?? name);
     return (
       <div className="settings-field">
         <label htmlFor={id}>{label}</label>
@@ -101,8 +118,8 @@ function Fields({
             value={value}
             dir={locale === "ar" ? "rtl" : "ltr"}
             rows={3}
-            required
-            maxLength={2000}
+            required={!isSeo}
+            maxLength={limit}
             aria-invalid={!!error}
             aria-describedby={error ? id + "-error" : undefined}
             onChange={(e) => onChange(path, e.target.value)}
@@ -111,13 +128,32 @@ function Fields({
           <input
             id={id}
             value={value}
-            dir={locale === "ar" ? "rtl" : "ltr"}
-            required
-            maxLength={2000}
+            dir={
+              isUrl || name === "twitterHandle"
+                ? "ltr"
+                : locale === "ar"
+                  ? "rtl"
+                  : "ltr"
+            }
+            type={isUrl ? "url" : "text"}
+            placeholder={
+              isUrl
+                ? "https://..."
+                : name === "twitterHandle"
+                  ? "@username"
+                  : undefined
+            }
+            required={!isSeo}
+            maxLength={limit}
             aria-invalid={!!error}
             aria-describedby={error ? id + "-error" : undefined}
             onChange={(e) => onChange(path, e.target.value)}
           />
+        )}
+        {isSeo && ["title", "description"].includes(name) && (
+          <small className="admin-muted">
+            {value.length} / {limit} حرفًا
+          </small>
         )}
         {error && (
           <span className="admin-error" id={id + "-error"}>
@@ -148,6 +184,15 @@ function Fields({
         return (
           <fieldset key={key} className="settings-group">
             <legend>{title}</legend>
+            {key === "seo" && (
+              <p className="admin-muted">
+                العنوان والوصف للرئيسية، وصورة المشاركة لكل الصفحات. اترك
+                العنوان أو الوصف فارغًا لاستخدام هوية الموقع الحالية. يُفضّل
+                عنوان من 50–60 حرفًا ووصف من 150–160 حرفًا. أدخل رابط الموقع
+                الأساسي نفسه في اللغتين لتوليد الروابط الأساسية للصفحات، وصورة
+                عامة برابط كامل (المقاس المقترح 1200×630). الحقول اختيارية.
+              </p>
+            )}
             <Fields
               value={item}
               path={next}

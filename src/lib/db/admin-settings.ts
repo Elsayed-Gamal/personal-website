@@ -2,6 +2,8 @@ import "server-only";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/auth/admin";
 import { createAuthClient } from "@/lib/supabase/auth-server";
+import { emptySeo } from "@/lib/seo";
+import { siteUISchema } from "@/lib/content";
 import {
   settingsKeySchema,
   settingsValueSchemas,
@@ -30,8 +32,11 @@ export async function getAdminSettings(): Promise<SettingsRecord[]> {
     .parse(data);
   if (rows.length !== 4)
     throw new Error("بعض إعدادات الموقع أو ترجماتها غير موجودة.");
-  return rows.map((row) => ({
-    ...row,
-    value: settingsValueSchemas[row.key].parse(row.value),
-  }));
+  return rows.map((row) => {
+    if (row.key === "ui") {
+      const value = siteUISchema.parse(row.value);
+      return { ...row, value: { ...value, seo: value.seo ?? { ...emptySeo } } };
+    }
+    return { ...row, value: settingsValueSchemas[row.key].parse(row.value) };
+  });
 }

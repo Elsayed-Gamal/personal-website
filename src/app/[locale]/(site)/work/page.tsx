@@ -1,10 +1,15 @@
-import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ProjectCard } from "@/components/portfolio/project-card";
 import { isLocale } from "@/lib/content";
 import { getProjects, getSiteContent } from "@/lib/db/content";
 
-export const metadata: Metadata = { title: "Selected work" };
+import { getPageMetadata } from "@/lib/db/seo";
+
+export async function generateMetadata({
+  params,
+}: PageProps<"/[locale]/work">) {
+  return getPageMetadata((await params).locale, "work");
+}
 
 export default async function WorkPage({
   params,

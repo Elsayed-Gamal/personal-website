@@ -1,10 +1,15 @@
-import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ArticleCard } from "@/components/blog/article-card";
 import { isLocale } from "@/lib/content";
 import { getArticles, getSiteContent } from "@/lib/db/content";
 
-export const metadata: Metadata = { title: "Writing" };
+import { getPageMetadata } from "@/lib/db/seo";
+
+export async function generateMetadata({
+  params,
+}: PageProps<"/[locale]/blog">) {
+  return getPageMetadata((await params).locale, "blog");
+}
 
 export default async function BlogPage({
   params,

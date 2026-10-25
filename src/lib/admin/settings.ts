@@ -33,6 +33,8 @@ export const saveSettingsSchema = z
   ])
   .superRefine((input, ctx) => {
     function check(value: unknown, path: (string | number)[]) {
+      // SEO fields are optional overrides with their own limits and URL validation.
+      if (path[1] === "seo") return;
       if (typeof value === "string" && (!value.trim() || value.length > 2000)) {
         ctx.addIssue({
           code: "custom",
