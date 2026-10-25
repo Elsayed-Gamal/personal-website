@@ -3,7 +3,7 @@ begin;
 select set_config('request.jwt.claims', jsonb_build_object('sub',id,'role','authenticated')::text, true) from auth.users where lower(email)='eheeba@gmail.com' and email_confirmed_at is not null;
 set local role authenticated;
 do $$
-declare n integer; version timestamptz;
+declare n integer; version timestamptz; section text; language text;
 begin
   if not private.is_site_owner() then raise exception 'Owner lookup failed'; end if;
   select updated_at into version from public.site_content where key='ui' and locale='ar';
@@ -16,7 +16,21 @@ begin
   update public.site_content set value=value where key='home' and locale='en';
   get diagnostics n = row_count;
   if n <> 1 then raise exception 'English home update failed'; end if;
-  update public.site_content set value=value where key='about';
+  foreach section in array array['about','contact'] loop
+    foreach language in array array['ar','en'] loop
+      select updated_at into version from public.site_content where key=section and locale=language;
+      update public.site_content set value=jsonb_set(value,'{title}','"Rollback-only edit"'::jsonb) where key=section and locale=language and updated_at=version;
+      get diagnostics n = row_count;
+      if n <> 1 then raise exception 'Owner page update failed: %/%',section,language; end if;
+      if not exists(select 1 from public.site_content where key=section and locale=language and value->>'title'='Rollback-only edit') then
+        raise exception 'Saved page content not readable';
+      end if;
+      update public.site_content set value=value where key=section and locale=language and updated_at=version;
+      get diagnostics n = row_count;
+      if n <> 0 then raise exception 'Stale page update accepted'; end if;
+    end loop;
+  end loop;
+  update public.site_content set value=value where key='work';
   get diagnostics n = row_count;
   if n <> 0 then raise exception 'Out-of-scope update accepted'; end if;
   begin
@@ -28,7 +42,7 @@ reset role;
 select set_config('request.jwt.claims','{"sub":"00000000-0000-0000-0000-000000000001","role":"authenticated","email":"eheeba@gmail.com","user_metadata":{"role":"admin"}}',true);
 set local role authenticated;
 do $$ declare n integer; begin
-  update public.site_content set value=value where key in ('ui','home');
+  update public.site_content set value=value where key in ('ui','home','about','contact');
   get diagnostics n = row_count;
   if n <> 0 then raise exception 'Non-owner update accepted'; end if;
 end $$;
@@ -36,10 +50,10 @@ reset role;
 set local role anon;
 do $$ begin
   begin
-    update public.site_content set value=value where key='ui' and locale='ar';
+    update public.site_content set value=value where key in ('ui','home','about','contact');
     raise exception 'Anonymous update accepted';
   exception when insufficient_privilege then null; end;
 end $$;
 reset role;
 rollback;
-select 'passed: owner updates, stale writes denied, other keys denied, identity columns denied, non-owner denied, anonymous denied; all changes rolled back' as result;
+select 'passed: owner edits about/contact in both languages, stale writes denied, other keys denied, identity columns denied, non-owner denied, anonymous denied; all changes rolled back' as result;

@@ -16,7 +16,7 @@ export async function getAdminSettings(): Promise<SettingsRecord[]> {
   const { data, error } = await client
     .from("site_content")
     .select("key,locale,value,updated_at")
-    .in("key", ["ui", "home"])
+    .in("key", settingsKeySchema.options)
     .order("key")
     .order("locale");
   if (error) throw new Error("تعذر تحميل إعدادات الموقع.");
@@ -30,7 +30,7 @@ export async function getAdminSettings(): Promise<SettingsRecord[]> {
       }),
     )
     .parse(data);
-  if (rows.length !== 4)
+  if (rows.length !== settingsKeySchema.options.length * 2)
     throw new Error("بعض إعدادات الموقع أو ترجماتها غير موجودة.");
   return rows.map((row) => {
     if (row.key === "ui") {

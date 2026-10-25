@@ -3,8 +3,8 @@ import { saveSettingsSchema } from "../../src/lib/admin/settings";
 import seed from "../../scripts/page-content-seed.json";
 
 describe("settings input validation", () => {
-  it("accepts both languages and only the two editable sections", () => {
-    for (const key of ["ui", "home"] as const)
+  it("accepts both languages and only the four editable sections", () => {
+    for (const key of ["ui", "home", "about", "contact"] as const)
       for (const locale of ["ar", "en"] as const) {
         expect(
           saveSettingsSchema.safeParse({
@@ -15,7 +15,32 @@ describe("settings input validation", () => {
           }).success,
         ).toBe(true);
       }
-    expect(saveSettingsSchema.safeParse({ key: "about" }).success).toBe(false);
+    expect(saveSettingsSchema.safeParse({ key: "work" }).success).toBe(false);
+  });
+  it("rejects invalid page content and mismatched value icons", () => {
+    const base = { locale: "ar", version: "2026-10-25T00:00:00Z" };
+    expect(
+      saveSettingsSchema.safeParse({
+        ...base,
+        key: "contact",
+        value: {
+          ...seed.contact.ar,
+          form: { ...seed.contact.ar.form, success: " " },
+        },
+      }).success,
+    ).toBe(false);
+    expect(
+      saveSettingsSchema.safeParse({
+        ...base,
+        key: "contact",
+        value: { ...seed.contact.ar, prompts: ["one"] },
+      }).success,
+    ).toBe(false);
+    const value = structuredClone(seed.about.ar);
+    value.values[0].icon = "globe";
+    expect(
+      saveSettingsSchema.safeParse({ ...base, key: "about", value }).success,
+    ).toBe(false);
   });
   it("rejects blank text, oversized fields, invalid icons and broken array structure", () => {
     const input = {

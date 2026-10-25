@@ -371,6 +371,7 @@
 }
 .settings-segments {
   display: flex;
+  flex-wrap: wrap;
   gap: 4px;
   padding: 5px;
   border: 1px solid #dfe7f2;
@@ -505,6 +506,52 @@
 .settings-reset:disabled {
   opacity: 0.5;
   cursor: default;
+}
+.settings-tool-add,
+.settings-tool-delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border-radius: 9px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease,
+    box-shadow 160ms ease;
+}
+.settings-tool-add {
+  margin-top: 18px;
+  border: 1px solid #9eb9e8;
+  padding: 10px 15px;
+  color: #214fa5;
+  background: #eaf1ff;
+  box-shadow: 0 2px 8px #214fa512;
+}
+.settings-tool-add:hover {
+  border-color: #759bdc;
+  background: #dce9ff;
+}
+.settings-tool-delete {
+  margin-top: 7px;
+  border: 1px solid #efc2c8;
+  padding: 7px 10px;
+  color: #a12637;
+  background: #fff5f6;
+}
+.settings-tool-delete:hover {
+  border-color: #dfa0a9;
+  color: #861f2e;
+  background: #ffe8eb;
+}
+.settings-tool-add:focus-visible,
+.settings-tool-delete:focus-visible {
+  outline: 3px solid #93b4ea66;
+  outline-offset: 2px;
 }
 .settings-notice {
   display: flex;

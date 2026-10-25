@@ -200,8 +200,8 @@ export const siteContent = pgTable(
     pgPolicy("Owner updates site settings", {
       for: "update",
       to: authenticated,
-      using: sql`${t.key} in ('ui','home') and (select private.is_site_owner())`,
-      withCheck: sql`${t.key} in ('ui','home') and (select private.is_site_owner())`,
+      using: sql`${t.key} in ('ui','home','about','contact') and (select private.is_site_owner())`,
+      withCheck: sql`${t.key} in ('ui','home','about','contact') and (select private.is_site_owner())`,
     }),
   ],
 ).enableRLS();

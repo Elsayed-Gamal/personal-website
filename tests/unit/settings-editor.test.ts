@@ -17,7 +17,7 @@ vi.mock("@/app/admin/(protected)/settings/actions", () => ({
 import { SettingsEditor } from "../../src/components/admin/settings-editor";
 import { emptySeo } from "../../src/lib/seo";
 
-const records = (["ui", "home"] as const).flatMap((key) =>
+const records = (["ui", "home", "about", "contact"] as const).flatMap((key) =>
   (["ar", "en"] as const).map((locale) => ({
     key,
     locale,
@@ -31,6 +31,77 @@ afterEach(() => {
   mock.save.mockReset();
 });
 describe("settings editor", () => {
+  it("edits about icons and tools, and saves contact form text for the selected language", async () => {
+    render(createElement(SettingsEditor, { records }));
+    fireEvent.click(screen.getByRole("button", { name: "من أنا" }));
+    expect(
+      screen.getByRole("link", { name: "عرض الموقع" }).getAttribute("href"),
+    ).toBe("/ar/about");
+    expect(
+      (screen.getAllByLabelText("الأيقونة")[0] as HTMLSelectElement).value,
+    ).toBe("compass");
+    fireEvent.change(screen.getAllByLabelText("الأيقونة")[0], {
+      target: { value: "code" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "إضافة أداة" }));
+    fireEvent.change(screen.getByLabelText("الأداة 9"), {
+      target: { value: "Docker" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "حذف الأداة 1" }));
+    mock.save.mockImplementation(async (input) => ({
+      ok: true,
+      record: {
+        key: input.key,
+        locale: input.locale,
+        value: input.value,
+        updated_at: "2026-10-25T00:00:00Z",
+      },
+    }));
+    fireEvent.click(screen.getByRole("button", { name: "حفظ التغييرات" }));
+    await waitFor(() =>
+      expect(
+        (screen.getByRole("button", { name: "تواصل" }) as HTMLButtonElement)
+          .disabled,
+      ).toBe(false),
+    );
+    expect(mock.save).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        key: "about",
+        locale: "ar",
+        value: expect.objectContaining({
+          stack: [...seed.about.ar.stack.slice(1), "Docker"],
+          values: expect.arrayContaining([
+            expect.objectContaining({
+              icon: "code",
+              title: seed.about.ar.values[0].title,
+            }),
+          ]),
+        }),
+      }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "تواصل" }));
+    fireEvent.click(screen.getByRole("button", { name: "English" }));
+    expect(
+      screen.getByRole("link", { name: "عرض الموقع" }).getAttribute("href"),
+    ).toBe("/en/contact");
+    fireEvent.change(screen.getByLabelText("رسالة نجاح الإرسال"), {
+      target: { value: "Thank you for your message." },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "حفظ التغييرات" }));
+    await waitFor(() =>
+      expect(mock.save).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          key: "contact",
+          locale: "en",
+          value: expect.objectContaining({
+            form: expect.objectContaining({
+              success: "Thank you for your message.",
+            }),
+          }),
+        }),
+      ),
+    );
+  });
   it("edits localized SEO together with site settings and preserves unrelated fields", async () => {
     const withSeo = records.map((row) =>
       row.key === "ui"

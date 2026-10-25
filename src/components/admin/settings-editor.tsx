@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, useTransition } from "react";
-import { Check, Save, ExternalLink } from "lucide-react";
+import { Check, Save, ExternalLink, Plus, Trash2 } from "lucide-react";
 import { saveSettings } from "@/app/admin/(protected)/settings/actions";
 import type { SettingsRecord, SettingsValue } from "@/lib/admin/settings";
 
@@ -53,11 +53,49 @@ const labels: Record<string, string> = {
   imageUrl: "رابط صورة المشاركة",
   imageAlt: "وصف صورة المشاركة",
   twitterHandle: "حساب X (Twitter)",
+  intro: "النص التعريفي",
+  storyTitle: "عنوان النبذة",
+  story: "النبذة وطريقة العمل",
+  values: "مبادئ العمل",
+  stackTitle: "عنوان قسم الأدوات",
+  stack: "الأدوات والتقنيات",
+  promptsTitle: "عنوان نقاط وصف المشروع",
+  prompts: "نقاط وصف المشروع",
+  cardTitle: "عنوان بطاقة التواصل",
+  cardText: "وصف بطاقة التواصل",
+  workPrompt: "الدعوة لاستعراض المشاريع",
+  workLink: "نص رابط المشاريع",
+  form: "نصوص نموذج التواصل",
+  name: "تسمية حقل الاسم",
+  email: "تسمية حقل البريد الإلكتروني",
+  message: "تسمية حقل الرسالة",
+  submit: "نص زر الإرسال",
+  sending: "النص أثناء الإرسال",
+  success: "رسالة نجاح الإرسال",
+  error: "رسالة فشل الإرسال",
+  invalid: "رسالة البيانات غير الصحيحة",
+  rateLimited: "رسالة تجاوز حد الإرسال",
+  privacy: "نص الخصوصية",
+  hint: "تلميح كتابة الرسالة",
+  another: "نص زر إرسال رسالة أخرى",
 };
 const icons = {
   globe: "موقع إلكتروني",
   layers: "تطبيق / طبقات",
   "shopping-bag": "متجر إلكتروني",
+};
+const valueIcons = {
+  compass: "بوصلة / الاتجاه",
+  gauge: "مؤشر / الأداء",
+  workflow: "سير العمل",
+  code: "الكود / الجودة",
+};
+const sectionDescriptions = {
+  ui: "الهوية، القائمة، التذييل، وإعدادات SEO وتسميات الأزرار في الموقع.",
+  home: "نصوص وأقسام الصفحة الرئيسية. المشاريع والمقالات المعروضة تُدار من قسم إدارة المحتوى.",
+  about: "النبذة التعريفية، مبادئ العمل وأيقوناتها، والأدوات والتقنيات.",
+  contact:
+    "مقدمة التواصل، نقاط وصف المشروع، ونصوص النموذج ورسائل نجاح الإرسال وأخطائه.",
 };
 function Fields({
   value,
@@ -68,10 +106,50 @@ function Fields({
 }: {
   value: Tree;
   path?: string[];
-  onChange: (path: string[], value: string) => void;
+  onChange: (path: string[], value: string | string[]) => void;
   errors: Record<string, string>;
   locale: string;
 }) {
+  if (path.length === 1 && path[0] === "stack" && Array.isArray(value)) {
+    return (
+      <div>
+        <div className="settings-fields">
+          {value.map((item, index) => (
+            <div key={index}>
+              <Fields
+                value={item}
+                path={[...path, String(index)]}
+                onChange={onChange}
+                errors={errors}
+                locale={locale}
+              />
+              <button
+                type="button"
+                className="settings-tool-delete"
+                onClick={() =>
+                  onChange(
+                    path,
+                    (value as string[]).filter((_, i) => i !== index),
+                  )
+                }
+              >
+                <Trash2 size={14} aria-hidden="true" />
+                حذف الأداة {index + 1}
+              </button>
+            </div>
+          ))}
+        </div>
+        <button
+          type="button"
+          className="settings-tool-add"
+          onClick={() => onChange(path, [...(value as string[]), ""])}
+        >
+          <Plus size={16} aria-hidden="true" />
+          إضافة أداة
+        </button>
+      </div>
+    );
+  }
   if (typeof value === "string") {
     const name = path.at(-1)!;
     const id = "setting-" + path.join("-");
@@ -89,7 +167,12 @@ function Fields({
         : isSeo && name === "description"
           ? "وصف الموقع لمحركات البحث"
           : /^\d+$/.test(name)
-            ? "الميزة " + (Number(name) + 1)
+            ? (path[0] === "stack"
+                ? "الأداة "
+                : path[0] === "prompts"
+                  ? "النقطة "
+                  : "الميزة ") +
+              (Number(name) + 1)
             : (labels[name] ?? name);
     return (
       <div className="settings-field">
@@ -98,13 +181,17 @@ function Fields({
           <select
             id={id}
             value={value}
+            aria-invalid={!!error}
+            aria-describedby={error ? id + "-error" : undefined}
             onChange={(e) => onChange(path, e.target.value)}
           >
-            {Object.entries(icons).map(([key, label]) => (
-              <option key={key} value={key}>
-                {label}
-              </option>
-            ))}
+            {Object.entries(path[0] === "values" ? valueIcons : icons).map(
+              ([key, label]) => (
+                <option key={key} value={key}>
+                  {label}
+                </option>
+              ),
+            )}
           </select>
         ) : [
             "description",
@@ -112,6 +199,15 @@ function Fields({
             "detailText",
             "footer",
             "artDescription",
+            "intro",
+            "story",
+            "cardText",
+            "privacy",
+            "hint",
+            "success",
+            "error",
+            "invalid",
+            "rateLimited",
           ].includes(name) ? (
           <textarea
             id={id}
@@ -166,6 +262,8 @@ function Fields({
   return (
     <div className="settings-fields">
       {Object.entries(value).map(([key, item]) => {
+        // Legacy field retained in stored content, but no longer rendered publicly.
+        if (path.length === 0 && key === "emailLabel") return null;
         const next = [...path, key];
         if (typeof item === "string")
           return (
@@ -179,7 +277,12 @@ function Fields({
             />
           );
         const title = /^\d+$/.test(key)
-          ? (path.includes("steps") ? "الخطوة " : "الخدمة ") + (Number(key) + 1)
+          ? (path.includes("steps")
+              ? "الخطوة "
+              : path.includes("values")
+                ? "المبدأ "
+                : "الخدمة ") +
+            (Number(key) + 1)
           : (labels[key] ?? key);
         return (
           <fieldset key={key} className="settings-group">
@@ -262,7 +365,7 @@ export function SettingsEditor({ records }: { records: SettingsRecord[] }) {
     setNotice(null);
     setErrors({});
   }
-  function change(path: string[], value: string) {
+  function change(path: string[], value: string | string[]) {
     setDraft((current) => {
       const next = structuredClone(current);
       let target = next as unknown as Record<string, unknown>;
@@ -285,6 +388,8 @@ export function SettingsEditor({ records }: { records: SettingsRecord[] }) {
           {[
             ["ui", "إعدادات الموقع"],
             ["home", "محتوى الرئيسية"],
+            ["about", "من أنا"],
+            ["contact", "تواصل"],
           ].map(([key, label]) => (
             <button
               key={key}
@@ -320,13 +425,17 @@ export function SettingsEditor({ records }: { records: SettingsRecord[] }) {
       </div>
       <div className="settings-intro">
         <p className="admin-muted">
-          {initial.key === "ui"
-            ? "الهوية، القائمة، التذييل، وتسميات الأزرار في الموقع."
-            : "نصوص وأقسام الصفحة الرئيسية. المشاريع والمقالات المعروضة تُدار من قسم إدارة المحتوى."}{" "}
-          التغييرات تُنشر مباشرة بعد الحفظ للغة المختارة.
+          {sectionDescriptions[initial.key]} التغييرات تُنشر مباشرة بعد الحفظ
+          للغة المختارة.
         </p>
         <a
-          href={"/" + initial.locale}
+          href={
+            "/" +
+            initial.locale +
+            (["about", "contact"].includes(initial.key)
+              ? "/" + initial.key
+              : "")
+          }
           target="_blank"
           rel="noreferrer"
           className="settings-preview"

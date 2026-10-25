@@ -1,10 +1,19 @@
 import { z } from "zod";
-import { homeContentSchema, siteUISchema, type Locale } from "@/lib/content";
+import {
+  aboutContentSchema,
+  contactContentSchema,
+  homeContentSchema,
+  siteUISchema,
+  type Locale,
+} from "@/lib/content";
 
-export const settingsKeySchema = z.enum(["ui", "home"]);
+export const settingsKeySchema = z.enum(["ui", "home", "about", "contact"]);
 export type SettingsKey = z.infer<typeof settingsKeySchema>;
 export type SettingsValue =
-  z.infer<typeof siteUISchema> | z.infer<typeof homeContentSchema>;
+  | z.infer<typeof siteUISchema>
+  | z.infer<typeof homeContentSchema>
+  | z.infer<typeof aboutContentSchema>
+  | z.infer<typeof contactContentSchema>;
 export type SettingsRecord = {
   key: SettingsKey;
   locale: Locale;
@@ -15,6 +24,8 @@ export type SettingsRecord = {
 export const settingsValueSchemas = {
   ui: siteUISchema,
   home: homeContentSchema,
+  about: aboutContentSchema,
+  contact: contactContentSchema,
 };
 export const saveSettingsSchema = z
   .discriminatedUnion("key", [
@@ -29,6 +40,18 @@ export const saveSettingsSchema = z
       locale: z.enum(["ar", "en"]),
       version: z.string().datetime({ offset: true }),
       value: homeContentSchema,
+    }),
+    z.object({
+      key: z.literal("about"),
+      locale: z.enum(["ar", "en"]),
+      version: z.string().datetime({ offset: true }),
+      value: aboutContentSchema,
+    }),
+    z.object({
+      key: z.literal("contact"),
+      locale: z.enum(["ar", "en"]),
+      version: z.string().datetime({ offset: true }),
+      value: contactContentSchema,
     }),
   ])
   .superRefine((input, ctx) => {
