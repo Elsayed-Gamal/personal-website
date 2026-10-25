@@ -4,7 +4,7 @@
 
 Articles support one or two languages. Each translation has a distinct slug and publication flag; a published article requires at least one complete published translation. Hidden translations and draft articles remain unavailable to public readers. Empty category translations fall back to the provided language. Markdown previews use the same sanitized renderer as public articles. Existing translation slugs are immutable to protect links. Removing a translation removes its URL on save.
 
-Projects support Arabic and English, summary/body/category, year, ordering, card palette and technology stack. Drafts may be incomplete; publishing requires complete translations in both languages. The project slug is fixed after creation. Images/uploads remain outside this phase, matching the existing database and public card design.
+Projects support Arabic and English, summary/category, year, ordering, card palette and technology stack. Project details use GitHub-flavored Markdown with the same sanitized editor preview and public renderer as articles, including headings, lists, links, tables, quotes and code blocks. Drafts may be incomplete; publishing requires complete translations in both languages. The project slug is fixed after creation. Articles and projects support an uploaded cover with Arabic/English alternative text; see [image uploads](content-images.md).
 
 Saving changes publication state immediately. Choosing draft unpublishes content on save. The editor warns about unsaved navigation and preserves edits on errors. Deletion requires a separate confirmation and deletes translations through the existing foreign-key cascades; it is permanent.
 
@@ -20,6 +20,6 @@ The four content tables now grant authenticated CRUD, constrained by owner-only 
 
 `tests/integration/admin-content.sql` runs rollback-only fixtures against the approved project, testing CRUD, unpublished content and translation visibility, duplicate-slug atomic rollback, stale writes/deletes, owner versus ordinary/anonymous access, unpublishing and cascading deletion. Fixtures never remain in the database.
 
-Unit/component tests cover publication validation, Arabic and invalid slugs, language requirements, RPC authorization/error handling, search, confirmation before deletion, independent language edits, Markdown preview, and keeping a draft after failure. Browser tests cover admin protection and existing public-page language redirects. Actual browser login/save with the owner's password is not automated.
+Unit/component tests cover publication validation, Arabic and invalid slugs, language requirements, RPC authorization/error handling, search, confirmation before deletion, independent language edits, sanitized article/project Markdown previews, and keeping a draft after failure. Browser tests cover admin protection and existing public-page language redirects. Actual browser login/save with the owner's password is not automated.
 
 Security advisors introduced no new RLS findings; the pre-existing private inbox notice and disabled leaked-password protection remain documented in [admin setup](admin.md).

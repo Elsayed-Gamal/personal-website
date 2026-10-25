@@ -10,8 +10,10 @@ import {
   type SiteContentMap,
 } from "@/lib/content";
 import { createContentClient } from "@/lib/supabase/server";
+import { coverImageFields } from "@/lib/content-images";
 
 const articleRow = z.object({
+  ...coverImageFields,
   id: z.string(),
   date: z.string(),
   reading_time: z.number(),
@@ -31,6 +33,8 @@ const articleRow = z.object({
 function mapArticle(input: unknown) {
   const row = articleRow.parse(input);
   return articleSchema.parse({
+    cover_image_path: row.cover_image_path,
+    cover_image_alt: row.cover_image_alt,
     id: row.id,
     date: row.date,
     readingTime: row.reading_time,
@@ -44,6 +48,7 @@ function mapArticle(input: unknown) {
 }
 
 const projectRow = z.object({
+  ...coverImageFields,
   slug: z.string(),
   sort_order: z.number(),
   year: z.string(),
@@ -63,6 +68,8 @@ const projectRow = z.object({
 function mapProject(input: unknown) {
   const row = projectRow.parse(input);
   return projectSchema.parse({
+    cover_image_path: row.cover_image_path,
+    cover_image_alt: row.cover_image_alt,
     slug: row.slug,
     index: String(row.sort_order).padStart(2, "0"),
     year: row.year,

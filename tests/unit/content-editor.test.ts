@@ -182,4 +182,23 @@ describe("content manager", () => {
       "عنوان عربي جديد",
     );
   });
+  it("previews project details as sanitized Markdown", () => {
+    render(
+      createElement(ContentEditor, {
+        entry: project,
+        onSaved: vi.fn(),
+        onClose: vi.fn(),
+      }),
+    );
+    fireEvent.change(screen.getByLabelText("تفاصيل المشروع (Markdown)"), {
+      target: {
+        value:
+          "## النتيجة\n\n- أداء أفضل\n- تجربة أوضح\n\n<script>alert('unsafe')</script>",
+      },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "معاينة المحتوى" }));
+    expect(screen.getByRole("heading", { name: "النتيجة" })).toBeTruthy();
+    expect(screen.getByText("أداء أفضل").closest("li")).toBeTruthy();
+    expect(document.querySelector("script")).toBeNull();
+  });
 });

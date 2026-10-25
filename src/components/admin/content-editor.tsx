@@ -11,6 +11,7 @@ import type {
   ProjectEdit,
 } from "@/lib/admin/content";
 import { useUnsavedChanges } from "./use-unsaved-changes";
+import { ContentImageField } from "./content-image-field";
 
 type Locale = "ar" | "en";
 function Input({
@@ -100,8 +101,10 @@ export function ContentEditor({
     conflict?: boolean;
   } | null>(null);
   const [pending, startTransition] = useTransition();
+  const [uploading, setUploading] = useState(false);
+  const busy = pending || uploading;
   const dirty = JSON.stringify(draft) !== JSON.stringify(original);
-  useUnsavedChanges(dirty);
+  useUnsavedChanges(dirty || uploading);
   const idx = draft.translations.findIndex((t) => t.locale === language);
   const translation = draft.translations[idx];
   const prefix = "translations." + idx + ".";
@@ -124,7 +127,7 @@ export function ContentEditor({
     setErrors({});
   }
   function close() {
-    if (!pending && (!dirty || window.confirm("تجاهل التعديلات غير المحفوظة؟")))
+    if (!busy && (!dirty || window.confirm("تجاهل التعديلات غير المحفوظة؟")))
       onClose();
   }
   function addLanguage() {
@@ -167,7 +170,7 @@ export function ContentEditor({
           type="button"
           className="settings-reset"
           onClick={close}
-          disabled={pending}
+          disabled={busy}
         >
           <ArrowRight size={17} /> العودة للقائمة
         </button>
@@ -186,6 +189,7 @@ export function ContentEditor({
       <form
         onSubmit={(e) => {
           e.preventDefault();
+          if (busy) return;
           startTransition(async () => {
             setNotice(null);
             setErrors({});
@@ -228,7 +232,14 @@ export function ContentEditor({
           });
         }}
       >
-        <fieldset disabled={pending} className="settings-form-body">
+        <fieldset disabled={busy} className="settings-form-body">
+          <ContentImageField
+            entry={draft}
+            disabled={pending}
+            busy={uploading}
+            onBusyChange={setUploading}
+            onChange={patch}
+          />
           <div className="settings-group">
             <h3>بيانات {draft.kind === "article" ? "المقال" : "المشروع"}</h3>
             <div className="settings-fields">
@@ -439,9 +450,12 @@ export function ContentEditor({
                             .summary
                         }
                       </p>
-                      <div className="content-plain-body">
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        rehypePlugins={[rehypeSanitize]}
+                      >
                         {translation.body}
-                      </div>
+                      </ReactMarkdown>
                     </>
                   )}
                 </div>
@@ -541,7 +555,7 @@ export function ContentEditor({
                       label={
                         draft.kind === "article"
                           ? "نص المقال (Markdown)"
-                          : "تفاصيل المشروع"
+                          : "تفاصيل المشروع (Markdown)"
                       }
                       name={prefix + "body"}
                       value={translation.body}
@@ -550,11 +564,7 @@ export function ContentEditor({
                       multiline
                       maxLength={80000}
                       dir={language === "ar" ? "rtl" : "ltr"}
-                      hint={
-                        draft.kind === "article"
-                          ? "يدعم العناوين والقوائم والروابط وأكواد البرمجة بصيغة Markdown."
-                          : "اكتب وصف المشروع ودورك فيه والنتائج."
-                      }
+                      hint="يدعم العناوين والقوائم والروابط والجداول والاقتباسات وأكواد البرمجة بصيغة Markdown."
                     />
                   </div>
                 </div>
@@ -588,14 +598,14 @@ export function ContentEditor({
             <button
               type="button"
               className="settings-reset"
-              disabled={pending}
+              disabled={busy}
               onClick={close}
             >
               إغلاق
             </button>
             <button
               className="admin-button"
-              disabled={pending || (!dirty && !!original.updated_at)}
+              disabled={busy || (!dirty && !!original.updated_at)}
             >
               <Save size={17} />
               {pending

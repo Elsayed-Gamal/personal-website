@@ -59,7 +59,7 @@ a {
   background-clip: padding-box;
   box-shadow: 0 3px 12px #183d6e22;
 }
-.article-card.site-link-pending-overlay > :first-child {
+.article-card.site-link-pending-overlay > .article-card-meta {
   padding-inline-end: 32px;
 }
 .site-sr-only {
@@ -586,27 +586,24 @@ summary {
 }
 .case-study-card {
   display: block;
+  padding: 18px;
+  border: 1px solid #dae4f1;
+  border-radius: 24px;
+  background: #eef3fa;
 }
 .project-cover {
   overflow: hidden;
   position: relative;
   min-height: 330px;
   border-radius: 16px;
-  background: #dce8f5;
-  padding: 55px 34px 0;
+  background: #edf2f8;
+  padding: 36px 34px 0;
 }
 .project-cover[data-color="violet"] {
-  background: #e8e6f2;
+  background: #eff0f6;
 }
 .project-cover[data-color="amber"] {
-  background: #eee6dc;
-}
-.concept-label {
-  position: absolute;
-  top: 18px;
-  inset-inline-start: 20px;
-  font-size: 10px;
-  color: #55677e;
+  background: #f5f2ec;
 }
 .project-mockup {
   height: 285px;
@@ -1113,4 +1110,24 @@ summary {
   border-radius: 8px;
   padding: 8px 14px;
   cursor: pointer;
+}
+.content-cover {
+  position: relative;
+  overflow: hidden;
+  background: #edf2f8;
+}
+.content-cover.project-cover {
+  padding: 0;
+}
+.article-card-cover {
+  aspect-ratio: 16 / 9;
+  flex-shrink: 0;
+  margin-bottom: 24px;
+  border-radius: 12px;
+}
+.content-detail-cover {
+  aspect-ratio: 16 / 9;
+  margin-top: 32px;
+  border: 1px solid #dce3e9;
+  border-radius: 20px;
 }

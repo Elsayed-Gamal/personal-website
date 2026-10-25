@@ -60,6 +60,8 @@ export function buildSeoMetadata(
     description?: string;
     path?: string;
     article?: boolean;
+    imageUrl?: string;
+    imageAlt?: string;
   } = {},
 ): Metadata {
   const seo = ui.seo ?? emptySeo;
@@ -68,8 +70,16 @@ export function buildSeoMetadata(
   const description = page.description || seo.description || ui.footer;
   const url =
     seo.siteUrl && page.path ? new URL(page.path, seo.siteUrl).href : undefined;
-  const images = seo.imageUrl
-    ? [{ url: seo.imageUrl, alt: seo.imageAlt || siteTitle }]
+  const imageUrl = page.imageUrl || seo.imageUrl;
+  const images = imageUrl
+    ? [
+        {
+          url: imageUrl,
+          alt: page.imageUrl
+            ? page.imageAlt || title
+            : seo.imageAlt || siteTitle,
+        },
+      ]
     : undefined;
   return {
     title: { absolute: title },

@@ -1,9 +1,14 @@
 import { ArrowUpRight } from "lucide-react";
 import { notFound } from "next/navigation";
+import ReactMarkdown from "react-markdown";
+import rehypeSanitize from "rehype-sanitize";
+import remarkGfm from "remark-gfm";
 import { isLocale } from "@/lib/content";
 import { getProjectBySlug, getSiteContent, getSiteUI } from "@/lib/db/content";
 import { buildSeoMetadata } from "@/lib/seo";
 import { SiteLink as Link } from "@/components/layout/site-link";
+import { ContentCover } from "@/components/ui/content-cover";
+import { contentImageUrl } from "@/lib/content-images";
 
 export async function generateMetadata({
   params,
@@ -20,6 +25,8 @@ export async function generateMetadata({
     title: content.title,
     description: content.summary,
     path: `/${locale}/work/${encodeURIComponent(project.slug)}`,
+    imageUrl: contentImageUrl(project.cover_image_path) ?? undefined,
+    imageAlt: project.cover_image_alt[locale] || content.title,
   });
 }
 
@@ -73,36 +80,52 @@ export default async function ProjectPage({
         </div>
       </section>
       <section className="container-shell">
-        <div
-          className="project-visual hairline min-h-[28rem] rounded-3xl border bg-[#e7eef9]"
-          data-color={project.color}
-        >
-          <div className="absolute inset-[12%] rounded-2xl border border-white/15 bg-white p-8 shadow-2xl">
-            <div className="flex gap-2">
-              <i className="size-2 rounded-full bg-red-400" />
-              <i className="size-2 rounded-full bg-amber-300" />
-              <i className="size-2 rounded-full bg-blue-400" />
-            </div>
-            <div className="mt-10 grid h-[70%] grid-cols-[.35fr_1fr] gap-5">
-              <div className="rounded-xl bg-[#f0f4fa]" />
-              <div className="grid grid-rows-[.5fr_1fr] gap-5">
+        {project.cover_image_path ? (
+          <ContentCover
+            path={project.cover_image_path}
+            alt={project.cover_image_alt[locale] || content.title}
+            className="content-detail-cover"
+            sizes="(max-width: 1279px) 90vw, 1200px"
+            contain
+          />
+        ) : (
+          <div
+            className="project-visual hairline min-h-[28rem] rounded-3xl border bg-[#e7eef9]"
+            data-color={project.color}
+          >
+            <div className="absolute inset-[12%] rounded-2xl border border-white/15 bg-white p-8 shadow-2xl">
+              <div className="flex gap-2">
+                <i className="size-2 rounded-full bg-red-400" />
+                <i className="size-2 rounded-full bg-amber-300" />
+                <i className="size-2 rounded-full bg-blue-400" />
+              </div>
+              <div className="mt-10 grid h-[70%] grid-cols-[.35fr_1fr] gap-5">
                 <div className="rounded-xl bg-[#f0f4fa]" />
-                <div className="grid grid-cols-3 gap-5">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="rounded-xl bg-[#f0f4fa]" />
-                  ))}
+                <div className="grid grid-rows-[.5fr_1fr] gap-5">
+                  <div className="rounded-xl bg-[#f0f4fa]" />
+                  <div className="grid grid-cols-3 gap-5">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="rounded-xl bg-[#f0f4fa]" />
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
       </section>
       <section className="container-shell grid gap-10 py-24 md:grid-cols-[.55fr_1fr]">
         <div>
           <p className="eyebrow">{labels.overview}</p>
-          <p className="mt-4 text-sm text-[#707a8d]">{labels.note}</p>
         </div>
-        <div className="article-body whitespace-pre-line">{content.body}</div>
+        <div className="article-body">
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+            rehypePlugins={[rehypeSanitize]}
+          >
+            {content.body}
+          </ReactMarkdown>
+        </div>
       </section>
       <section className="hairline border-t py-20 text-center">
         <Link

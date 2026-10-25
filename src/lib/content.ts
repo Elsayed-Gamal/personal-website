@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { seoSchema } from "@/lib/seo";
+import { coverImageFields } from "@/lib/content-images";
 
 export const locales = ["ar", "en"] as const;
 export type Locale = (typeof locales)[number];
@@ -171,6 +172,7 @@ export type LocalizedText = Record<
   z.infer<typeof projectTranslationSchema>
 >;
 export const projectSchema = z.object({
+  ...coverImageFields,
   slug: z.string().min(1),
   index: z.string(),
   year: z.string(),
@@ -190,6 +192,7 @@ export const articleTranslationSchema = z.object({
   body: z.string(),
 });
 export const articleSchema = z.object({
+  ...coverImageFields,
   id: z.string(),
   date: z.string(),
   readingTime: z.number().int().positive(),

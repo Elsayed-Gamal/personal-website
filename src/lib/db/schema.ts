@@ -56,6 +56,11 @@ export const projects = pgTable(
   "projects",
   {
     slug: text("slug").primaryKey(),
+    coverImagePath: text("cover_image_path"),
+    coverImageAlt: jsonb("cover_image_alt")
+      .$type<Record<Locale, string>>()
+      .notNull()
+      .default({ ar: "", en: "" }),
     sortOrder: integer("sort_order").notNull().default(0),
     year: text("year").notNull(),
     color: text("color").notNull(),
@@ -68,6 +73,14 @@ export const projects = pgTable(
   },
   (t) => [
     check("projects_color_check", sql`${t.color} in ('cyan','violet','amber')`),
+    check(
+      "projects_cover_image_path_check",
+      sql`${t.coverImagePath} ~ '^projects/[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}[.](jpg|png|webp)$'`,
+    ),
+    check(
+      "projects_cover_image_alt_check",
+      sql`(jsonb_typeof(${t.coverImageAlt}) = 'object' and jsonb_typeof(${t.coverImageAlt}->'ar') = 'string' and jsonb_typeof(${t.coverImageAlt}->'en') = 'string' and length(${t.coverImageAlt}->>'ar') <= 200 and length(${t.coverImageAlt}->>'en') <= 200) is true`,
+    ),
     index("projects_published_order_idx").on(t.published, t.sortOrder),
     pgPolicy("Read published projects", {
       for: "select",
@@ -116,6 +129,11 @@ export const articles = pgTable(
   "articles",
   {
     id: text("id").primaryKey(),
+    coverImagePath: text("cover_image_path"),
+    coverImageAlt: jsonb("cover_image_alt")
+      .$type<Record<Locale, string>>()
+      .notNull()
+      .default({ ar: "", en: "" }),
     date: date("date").notNull(),
     readingTime: integer("reading_time").notNull(),
     category: jsonb("category").$type<Record<Locale, string>>().notNull(),
@@ -124,6 +142,14 @@ export const articles = pgTable(
   },
   (t) => [
     check("articles_reading_time_check", sql`${t.readingTime} > 0`),
+    check(
+      "articles_cover_image_path_check",
+      sql`${t.coverImagePath} ~ '^articles/[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}[.](jpg|png|webp)$'`,
+    ),
+    check(
+      "articles_cover_image_alt_check",
+      sql`(jsonb_typeof(${t.coverImageAlt}) = 'object' and jsonb_typeof(${t.coverImageAlt}->'ar') = 'string' and jsonb_typeof(${t.coverImageAlt}->'en') = 'string' and length(${t.coverImageAlt}->>'ar') <= 200 and length(${t.coverImageAlt}->>'en') <= 200) is true`,
+    ),
     check(
       "articles_category_check",
       sql`jsonb_typeof(${t.category}) = 'object'`,

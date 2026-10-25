@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { coverImageFields } from "@/lib/content-images";
 const short = z.string().trim().max(200, "الحد الأقصى 200 حرف.");
 const text = z.string().trim().max(2000, "الحد الأقصى 2000 حرف.");
 const body = z.string().max(80000, "الحد الأقصى 80000 حرف.");
@@ -13,7 +14,12 @@ export const contentSlug = z
   );
 const locale = z.enum(["ar", "en"]);
 const version = z.string().datetime({ offset: true }).nullable();
-const base = { id: contentSlug, updated_at: version, published: z.boolean() };
+const base = {
+  id: contentSlug,
+  updated_at: version,
+  published: z.boolean(),
+  ...coverImageFields,
+};
 export const articleEditSchema = z.object({
   kind: z.literal("article"),
   ...base,
@@ -104,6 +110,13 @@ export const saveContentSchema = contentEntrySchema.superRefine(
     const error = (path: (string | number)[], message: string) =>
       ctx.addIssue({ code: "custom", path, message });
     if (
+      entry.cover_image_path &&
+      !entry.cover_image_path.startsWith(
+        entry.kind === "article" ? "articles/" : "projects/",
+      )
+    )
+      error(["cover_image_path"], "ارفع الصورة من محرر هذا النوع من المحتوى.");
+    if (
       new Set(entry.translations.map((t) => t.locale)).size !==
       entry.translations.length
     )
@@ -169,6 +182,8 @@ export function newContentEntry(kind: ContentKind): ContentEntry {
     return {
       kind,
       id: crypto.randomUUID(),
+      cover_image_path: null,
+      cover_image_alt: { ar: "", en: "" },
       updated_at: null,
       published: false,
       date: new Date().toLocaleDateString("en-CA", {
@@ -190,6 +205,8 @@ export function newContentEntry(kind: ContentKind): ContentEntry {
   return {
     kind,
     id: "",
+    cover_image_path: null,
+    cover_image_alt: { ar: "", en: "" },
     updated_at: null,
     published: false,
     year: String(new Date().getFullYear()),

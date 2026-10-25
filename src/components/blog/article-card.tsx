@@ -1,4 +1,5 @@
 import { ArrowUpRight } from "lucide-react";
+import { ContentCover } from "@/components/ui/content-cover";
 import type { Article, Locale } from "@/lib/content";
 import { getArticleLocale, getArticleTranslation } from "@/lib/content";
 import { getSiteUI } from "@/lib/db/content";
@@ -22,7 +23,15 @@ export async function ArticleCard({
       className="article-card group flex h-full flex-col"
       pendingIndicator="overlay"
     >
-      <div className="flex items-center justify-between text-[10px] tracking-[.14em] text-[#6f716a] uppercase">
+      {article.cover_image_path && (
+        <ContentCover
+          path={article.cover_image_path}
+          alt={article.cover_image_alt[articleLocale] || content.title}
+          className="article-card-cover"
+          sizes="(max-width: 767px) 90vw, (max-width: 1023px) 45vw, 30vw"
+        />
+      )}
+      <div className="article-card-meta flex items-center justify-between text-[10px] tracking-[.14em] text-[#6f716a] uppercase">
         <span>
           {article.category[locale]} / {article.date.slice(0, 4)}
         </span>

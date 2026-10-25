@@ -87,5 +87,28 @@ describe("editable SEO settings", () => {
       creator: "@developer",
       title: "Article title — My portfolio",
     });
+    const withCover = buildSeoMetadata(ui, "en", {
+      title: "Article title",
+      imageUrl:
+        "https://cdoaudugbjrkhyhivaaa.supabase.co/storage/v1/object/public/content-images/articles/00000000-0000-4000-8000-000000000001.webp",
+      imageAlt: "Article cover",
+    });
+    expect(withCover.openGraph).toMatchObject({
+      images: [
+        {
+          url: expect.stringContaining("/content-images/articles/"),
+          alt: "Article cover",
+        },
+      ],
+    });
+    expect(withCover.twitter).toMatchObject({
+      card: "summary_large_image",
+      images: [
+        {
+          url: expect.stringContaining("/content-images/articles/"),
+          alt: "Article cover",
+        },
+      ],
+    });
   });
 });

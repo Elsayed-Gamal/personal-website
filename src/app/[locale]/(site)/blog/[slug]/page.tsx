@@ -6,6 +6,8 @@ import { getArticleLocale, isLocale } from "@/lib/content";
 import { findArticleBySlug, getSiteContent, getSiteUI } from "@/lib/db/content";
 import { buildSeoMetadata } from "@/lib/seo";
 import { SiteLink as Link } from "@/components/layout/site-link";
+import { ContentCover } from "@/components/ui/content-cover";
+import { contentImageUrl } from "@/lib/content-images";
 
 export async function generateMetadata({
   params,
@@ -29,6 +31,8 @@ export async function generateMetadata({
     description: translation.excerpt,
     path: `/${locale}/blog/${encodeURIComponent(translation.slug)}`,
     article: true,
+    imageUrl: contentImageUrl(article.cover_image_path) ?? undefined,
+    imageAlt: article.cover_image_alt[locale] || translation.title,
   });
 }
 
@@ -79,8 +83,16 @@ export default async function ArticlePage({
           <p className="mt-6 text-xl leading-9 text-[#586779]">
             {translation.excerpt}
           </p>
-          <p className="mt-7 text-xs text-[#626d80]">{copy.note}</p>
         </header>
+        {article.cover_image_path && (
+          <ContentCover
+            path={article.cover_image_path}
+            alt={article.cover_image_alt[locale] || translation.title}
+            className="content-detail-cover"
+            sizes="(max-width: 767px) 90vw, 768px"
+            contain
+          />
+        )}
         <div className="article-body py-10">
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
