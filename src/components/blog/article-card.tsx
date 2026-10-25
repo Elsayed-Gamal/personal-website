@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import type { Article, Locale } from "@/lib/content";
 import { getArticleLocale, getArticleTranslation } from "@/lib/content";
 import { getSiteUI } from "@/lib/db/content";
+import { SiteLink as Link } from "@/components/layout/site-link";
 
 export async function ArticleCard({
   article,
@@ -20,6 +20,7 @@ export async function ArticleCard({
     <Link
       href={`/${articleLocale}/blog/${content.slug}`}
       className="article-card group flex h-full flex-col"
+      pendingIndicator="overlay"
     >
       <div className="flex items-center justify-between text-[10px] tracking-[.14em] text-[#6f716a] uppercase">
         <span>

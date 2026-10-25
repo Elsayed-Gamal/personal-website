@@ -1,4 +1,3 @@
-import Link from "next/link";
 import {
   ArrowUpRight,
   Check,
@@ -6,6 +5,7 @@ import {
   PanelsTopLeft,
 } from "lucide-react";
 import type { HomeContent, Locale } from "@/lib/content";
+import { SiteLink as Link } from "@/components/layout/site-link";
 
 export function Hero({
   locale,

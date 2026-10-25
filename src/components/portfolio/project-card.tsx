@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import type { Locale, Project } from "@/lib/content";
 import { getSiteUI } from "@/lib/db/content";
+import { SiteLink as Link } from "@/components/layout/site-link";
 
 export async function ProjectCard({
   project,
@@ -16,6 +16,7 @@ export async function ProjectCard({
     <Link
       href={`/${locale}/work/${project.slug}`}
       className="case-study-card group"
+      pendingIndicator="overlay"
     >
       <div
         className="project-cover"

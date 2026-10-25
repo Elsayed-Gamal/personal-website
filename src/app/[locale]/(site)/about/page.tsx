@@ -1,9 +1,9 @@
-import Link from "next/link";
 import { ArrowUpRight, Code2, Compass, Gauge, Workflow } from "lucide-react";
 import { notFound } from "next/navigation";
 import { isLocale } from "@/lib/content";
 import { getSiteContent } from "@/lib/db/content";
 import { getPageMetadata } from "@/lib/db/seo";
+import { SiteLink as Link } from "@/components/layout/site-link";
 
 export async function generateMetadata({
   params,

@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { redirect, notFound } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
@@ -6,6 +5,7 @@ import remarkGfm from "remark-gfm";
 import { getArticleLocale, isLocale } from "@/lib/content";
 import { findArticleBySlug, getSiteContent, getSiteUI } from "@/lib/db/content";
 import { buildSeoMetadata } from "@/lib/seo";
+import { SiteLink as Link } from "@/components/layout/site-link";
 
 export async function generateMetadata({
   params,

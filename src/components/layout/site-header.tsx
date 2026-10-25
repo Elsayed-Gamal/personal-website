@@ -1,10 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useRef } from "react";
 import { ArrowUpRight, Menu } from "lucide-react";
 import { LanguageSwitcher } from "@/components/layout/language-switcher";
 import type { Locale, SiteUI } from "@/lib/content";
+import { SiteLink as Link } from "@/components/layout/site-link";
 
 export function SiteHeader({ locale, t }: { locale: Locale; t: SiteUI }) {
   const menuRef = useRef<HTMLDetailsElement>(null);

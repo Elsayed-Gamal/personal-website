@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { ArrowUpRight, MessageSquare, ListChecks } from "lucide-react";
 import { randomUUID } from "node:crypto";
 import { ContactForm } from "@/components/forms/contact-form";
@@ -6,6 +5,7 @@ import { notFound } from "next/navigation";
 import { isLocale } from "@/lib/content";
 import { getSiteContent } from "@/lib/db/content";
 import { getPageMetadata } from "@/lib/db/seo";
+import { SiteLink as Link } from "@/components/layout/site-link";
 
 export async function generateMetadata({
   params,

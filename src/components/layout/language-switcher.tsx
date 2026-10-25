@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { Locale } from "@/lib/content";
+import { SiteLink as Link } from "@/components/layout/site-link";
 
 export function LanguageSwitcher({
   locale,

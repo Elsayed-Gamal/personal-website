@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { ArrowUpRight, Globe2, Layers, ShoppingBag } from "lucide-react";
 import { notFound } from "next/navigation";
 import { Hero } from "@/components/home/hero";
@@ -7,6 +6,7 @@ import { ArticleCard } from "@/components/blog/article-card";
 import { isLocale } from "@/lib/content";
 import { getArticles, getHomeContent, getProjects } from "@/lib/db/content";
 import { getPageMetadata } from "@/lib/db/seo";
+import { SiteLink as Link } from "@/components/layout/site-link";
 
 export async function generateMetadata({ params }: PageProps<"/[locale]">) {
   return getPageMetadata((await params).locale, "home");

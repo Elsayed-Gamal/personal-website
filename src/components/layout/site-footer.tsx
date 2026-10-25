@@ -1,6 +1,6 @@
-import Link from "next/link";
 import type { Locale } from "@/lib/content";
 import { getSiteUI } from "@/lib/db/content";
+import { SiteLink as Link } from "@/components/layout/site-link";
 
 export async function SiteFooter({ locale }: { locale: Locale }) {
   const t = await getSiteUI(locale);
