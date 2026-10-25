@@ -5,6 +5,7 @@ test("anonymous requests cannot read any admin page", async ({ request }) => {
     "/admin",
     "/admin/dashboard",
     "/admin/content",
+    "/admin/media",
     "/admin/messages",
     "/admin/settings",
     "/admin/settings.json",

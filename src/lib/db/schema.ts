@@ -57,6 +57,7 @@ export const projects = pgTable(
   {
     slug: text("slug").primaryKey(),
     coverImagePath: text("cover_image_path"),
+    coverImageUrl: text("cover_image_url"),
     coverImageAlt: jsonb("cover_image_alt")
       .$type<Record<Locale, string>>()
       .notNull()
@@ -75,7 +76,15 @@ export const projects = pgTable(
     check("projects_color_check", sql`${t.color} in ('cyan','violet','amber')`),
     check(
       "projects_cover_image_path_check",
-      sql`${t.coverImagePath} ~ '^projects/[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}[.](jpg|png|webp)$'`,
+      sql`${t.coverImagePath} ~ '^(articles|projects)/[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}[.](jpg|png|webp)$'`,
+    ),
+    check(
+      "projects_cover_image_source_check",
+      sql`${t.coverImagePath} is null or ${t.coverImageUrl} is null`,
+    ),
+    check(
+      "projects_cover_image_url_check",
+      sql`length(${t.coverImageUrl})<=2000 and ${t.coverImageUrl} ~ '^https://[^/@[:space:]?#]+([/?#][^[:space:]]*)?$'`,
     ),
     check(
       "projects_cover_image_alt_check",
@@ -130,6 +139,7 @@ export const articles = pgTable(
   {
     id: text("id").primaryKey(),
     coverImagePath: text("cover_image_path"),
+    coverImageUrl: text("cover_image_url"),
     coverImageAlt: jsonb("cover_image_alt")
       .$type<Record<Locale, string>>()
       .notNull()
@@ -144,7 +154,15 @@ export const articles = pgTable(
     check("articles_reading_time_check", sql`${t.readingTime} > 0`),
     check(
       "articles_cover_image_path_check",
-      sql`${t.coverImagePath} ~ '^articles/[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}[.](jpg|png|webp)$'`,
+      sql`${t.coverImagePath} ~ '^(articles|projects)/[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}[.](jpg|png|webp)$'`,
+    ),
+    check(
+      "articles_cover_image_source_check",
+      sql`${t.coverImagePath} is null or ${t.coverImageUrl} is null`,
+    ),
+    check(
+      "articles_cover_image_url_check",
+      sql`length(${t.coverImageUrl})<=2000 and ${t.coverImageUrl} ~ '^https://[^/@[:space:]?#]+([/?#][^[:space:]]*)?$'`,
     ),
     check(
       "articles_cover_image_alt_check",

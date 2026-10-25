@@ -2,7 +2,12 @@
 import Image from "next/image";
 import { useRef, useState } from "react";
 import { ImagePlus, LoaderCircle, Trash2 } from "lucide-react";
-import { contentImageUrl, IMAGE_TYPES } from "@/lib/content-images";
+import {
+  contentImageUrl,
+  coverSourceFromUrl,
+  IMAGE_TYPES,
+} from "@/lib/content-images";
+import { MediaLibrary } from "./media-library";
 import { uploadContentImage } from "@/lib/admin/upload-image";
 import type { ContentEntry } from "@/lib/admin/content";
 
@@ -18,14 +23,34 @@ export function ContentImageField({
   busy: boolean;
   onBusyChange: (value: boolean) => void;
   onChange: (
-    value: Pick<ContentEntry, "cover_image_path" | "cover_image_alt">,
+    value: Pick<
+      ContentEntry,
+      "cover_image_path" | "cover_image_url" | "cover_image_alt"
+    >,
   ) => void;
 }) {
   const input = useRef<HTMLInputElement>(null);
   const inFlight = useRef(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-  const url = contentImageUrl(entry.cover_image_path);
+  const [mode, setMode] = useState<"upload" | "library" | "url">("upload");
+  const [urlInput, setUrlInput] = useState(entry.cover_image_url ?? "");
+  const url = contentImageUrl(entry.cover_image_path, entry.cover_image_url);
+
+  function applyUrl() {
+    if (disabled || busy) return;
+    try {
+      if (!urlInput.trim()) throw new Error();
+      onChange({
+        ...coverSourceFromUrl(urlInput),
+        cover_image_alt: entry.cover_image_alt,
+      });
+      setError("");
+      setNotice("تم اختيار الرابط. احفظ المحتوى لاعتماد الصورة.");
+    } catch {
+      setError("أدخل رابط صورة صالحًا يبدأ بـ https://.");
+    }
+  }
 
   async function upload(file: File) {
     if (inFlight.current || disabled) return;
@@ -37,6 +62,7 @@ export function ContentImageField({
       const path = await uploadContentImage(file, entry.kind);
       onChange({
         cover_image_path: path,
+        cover_image_url: null,
         cover_image_alt: entry.cover_image_alt,
       });
       setNotice("تم رفع الصورة. احفظ المحتوى لاعتماد التغيير.");
@@ -59,6 +85,7 @@ export function ContentImageField({
         <div className="content-image-preview">
           {url ? (
             <Image
+              key={url}
               src={url}
               alt={
                 entry.cover_image_alt.ar ||
@@ -68,6 +95,9 @@ export function ContentImageField({
               fill
               sizes="(max-width: 640px) 90vw, 320px"
               unoptimized
+              onError={() =>
+                setError("تعذر عرض الصورة. تأكد أن الرابط مباشر ومتاح للعامة.")
+              }
             />
           ) : (
             <ImagePlus size={36} aria-hidden="true" />
@@ -93,23 +123,52 @@ export function ContentImageField({
             }}
           />
           <div className="content-image-actions">
-            <button
-              type="button"
-              className="admin-button"
-              disabled={disabled || busy}
-              onClick={() => input.current?.click()}
-            >
-              {busy ? (
-                <LoaderCircle
-                  size={17}
-                  className="content-image-spinner"
-                  aria-hidden="true"
-                />
-              ) : (
-                <ImagePlus size={17} aria-hidden="true" />
-              )}
-              {busy ? "جارٍ رفع الصورة…" : url ? "استبدال الصورة" : "رفع صورة"}
-            </button>
+            {(
+              [
+                ["upload", "رفع صورة"],
+                ["library", "من المكتبة"],
+                ["url", "رابط صورة"],
+              ] as const
+            ).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                className="settings-reset"
+                aria-pressed={mode === value}
+                disabled={disabled || busy}
+                onClick={() => {
+                  setMode(value);
+                  setError("");
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <div className="content-image-actions">
+            {mode === "upload" && (
+              <button
+                type="button"
+                className="admin-button"
+                disabled={disabled || busy}
+                onClick={() => input.current?.click()}
+              >
+                {busy ? (
+                  <LoaderCircle
+                    size={17}
+                    className="content-image-spinner"
+                    aria-hidden="true"
+                  />
+                ) : (
+                  <ImagePlus size={17} aria-hidden="true" />
+                )}
+                {busy
+                  ? "جارٍ رفع الصورة…"
+                  : url
+                    ? "استبدال الصورة"
+                    : "اختيار ملف ورفعه"}
+              </button>
+            )}
             {url && (
               <button
                 type="button"
@@ -118,6 +177,7 @@ export function ContentImageField({
                 onClick={() => {
                   onChange({
                     cover_image_path: null,
+                    cover_image_url: null,
                     cover_image_alt: { ar: "", en: "" },
                   });
                   setNotice("احفظ المحتوى لإزالة الصورة منه.");
@@ -128,6 +188,39 @@ export function ContentImageField({
               </button>
             )}
           </div>
+          {mode === "url" && (
+            <div className="settings-field">
+              <label htmlFor="cover-image-url">رابط الصورة</label>
+              <input
+                id="cover-image-url"
+                type="url"
+                dir="ltr"
+                placeholder="https://example.com/image.jpg"
+                maxLength={2000}
+                value={urlInput}
+                disabled={disabled || busy}
+                onChange={(e) => setUrlInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    applyUrl();
+                  }
+                }}
+              />
+              <small className="admin-muted">
+                استخدم رابطًا مباشرًا للصورة، ثم اضغط «استخدام الرابط» واحفظ
+                المحتوى.
+              </small>
+              <button
+                type="button"
+                className="admin-button"
+                disabled={disabled || busy || !urlInput.trim()}
+                onClick={applyUrl}
+              >
+                استخدام الرابط
+              </button>
+            </div>
+          )}
           <small className="admin-muted">
             JPG، PNG، WebP — حتى 5 ميجابايت. الصور متاحة لمن يمتلك رابطها بعد
             الرفع، حتى قبل نشر المحتوى.
@@ -145,6 +238,21 @@ export function ContentImageField({
           )}
         </div>
       </div>
+      {mode === "library" && (
+        <MediaLibrary
+          disabled={disabled || busy}
+          onSelect={(image) => {
+            onChange({
+              cover_image_path: image.path,
+              cover_image_url: null,
+              cover_image_alt: entry.cover_image_alt,
+            });
+            setMode("upload");
+            setError("");
+            setNotice("تم اختيار الصورة من المكتبة. احفظ المحتوى لاعتمادها.");
+          }}
+        />
+      )}
       {url && (
         <div className="settings-fields">
           {(["ar", "en"] as const).map((locale) => (
@@ -161,6 +269,7 @@ export function ContentImageField({
                 onChange={(e) =>
                   onChange({
                     cover_image_path: entry.cover_image_path,
+                    cover_image_url: entry.cover_image_url,
                     cover_image_alt: {
                       ...entry.cover_image_alt,
                       [locale]: e.target.value,

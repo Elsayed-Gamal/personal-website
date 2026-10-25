@@ -31,7 +31,9 @@ export async function generateMetadata({
     description: translation.excerpt,
     path: `/${locale}/blog/${encodeURIComponent(translation.slug)}`,
     article: true,
-    imageUrl: contentImageUrl(article.cover_image_path) ?? undefined,
+    imageUrl:
+      contentImageUrl(article.cover_image_path, article.cover_image_url) ??
+      undefined,
     imageAlt: article.cover_image_alt[locale] || translation.title,
   });
 }
@@ -84,9 +86,10 @@ export default async function ArticlePage({
             {translation.excerpt}
           </p>
         </header>
-        {article.cover_image_path && (
+        {(article.cover_image_path || article.cover_image_url) && (
           <ContentCover
             path={article.cover_image_path}
+            url={article.cover_image_url}
             alt={article.cover_image_alt[locale] || translation.title}
             className="content-detail-cover"
             sizes="(max-width: 767px) 90vw, 768px"

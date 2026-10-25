@@ -19,9 +19,10 @@ export async function ProjectCard({
       className="case-study-card group"
       pendingIndicator="overlay"
     >
-      {project.cover_image_path ? (
+      {project.cover_image_path || project.cover_image_url ? (
         <ContentCover
           path={project.cover_image_path}
+          url={project.cover_image_url}
           alt={project.cover_image_alt[locale] || content.title}
           className="project-cover"
           sizes="(max-width: 767px) 90vw, 45vw"

@@ -109,13 +109,11 @@ export const saveContentSchema = contentEntrySchema.superRefine(
   (entry, ctx) => {
     const error = (path: (string | number)[], message: string) =>
       ctx.addIssue({ code: "custom", path, message });
-    if (
-      entry.cover_image_path &&
-      !entry.cover_image_path.startsWith(
-        entry.kind === "article" ? "articles/" : "projects/",
-      )
-    )
-      error(["cover_image_path"], "ارفع الصورة من محرر هذا النوع من المحتوى.");
+    if (entry.cover_image_path && entry.cover_image_url)
+      error(
+        ["cover_image_url"],
+        "اختر صورة من المكتبة أو رابطًا خارجيًا، وليس كليهما.",
+      );
     if (
       new Set(entry.translations.map((t) => t.locale)).size !==
       entry.translations.length
@@ -183,6 +181,7 @@ export function newContentEntry(kind: ContentKind): ContentEntry {
       kind,
       id: crypto.randomUUID(),
       cover_image_path: null,
+      cover_image_url: null,
       cover_image_alt: { ar: "", en: "" },
       updated_at: null,
       published: false,
@@ -206,6 +205,7 @@ export function newContentEntry(kind: ContentKind): ContentEntry {
     kind,
     id: "",
     cover_image_path: null,
+    cover_image_url: null,
     cover_image_alt: { ar: "", en: "" },
     updated_at: null,
     published: false,

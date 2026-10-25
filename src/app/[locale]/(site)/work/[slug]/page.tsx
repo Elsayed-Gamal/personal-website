@@ -25,7 +25,9 @@ export async function generateMetadata({
     title: content.title,
     description: content.summary,
     path: `/${locale}/work/${encodeURIComponent(project.slug)}`,
-    imageUrl: contentImageUrl(project.cover_image_path) ?? undefined,
+    imageUrl:
+      contentImageUrl(project.cover_image_path, project.cover_image_url) ??
+      undefined,
     imageAlt: project.cover_image_alt[locale] || content.title,
   });
 }
@@ -80,9 +82,10 @@ export default async function ProjectPage({
         </div>
       </section>
       <section className="container-shell">
-        {project.cover_image_path ? (
+        {project.cover_image_path || project.cover_image_url ? (
           <ContentCover
             path={project.cover_image_path}
+            url={project.cover_image_url}
             alt={project.cover_image_alt[locale] || content.title}
             className="content-detail-cover"
             sizes="(max-width: 1279px) 90vw, 1200px"

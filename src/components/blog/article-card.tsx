@@ -23,9 +23,10 @@ export async function ArticleCard({
       className="article-card group flex h-full flex-col"
       pendingIndicator="overlay"
     >
-      {article.cover_image_path && (
+      {(article.cover_image_path || article.cover_image_url) && (
         <ContentCover
           path={article.cover_image_path}
+          url={article.cover_image_url}
           alt={article.cover_image_alt[articleLocale] || content.title}
           className="article-card-cover"
           sizes="(max-width: 767px) 90vw, (max-width: 1023px) 45vw, 30vw"

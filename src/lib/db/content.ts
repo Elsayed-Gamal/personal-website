@@ -34,6 +34,7 @@ function mapArticle(input: unknown) {
   const row = articleRow.parse(input);
   return articleSchema.parse({
     cover_image_path: row.cover_image_path,
+    cover_image_url: row.cover_image_url,
     cover_image_alt: row.cover_image_alt,
     id: row.id,
     date: row.date,
@@ -69,6 +70,7 @@ function mapProject(input: unknown) {
   const row = projectRow.parse(input);
   return projectSchema.parse({
     cover_image_path: row.cover_image_path,
+    cover_image_url: row.cover_image_url,
     cover_image_alt: row.cover_image_alt,
     slug: row.slug,
     index: String(row.sort_order).padStart(2, "0"),

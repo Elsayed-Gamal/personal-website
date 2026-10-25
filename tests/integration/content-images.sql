@@ -45,11 +45,9 @@ begin
   begin
     perform public.save_site_entry(e||jsonb_build_object('updated_at',v,'cover_image_path','articles/'||gen_random_uuid()::text||'.png'));
     raise exception 'Nonexistent object accepted';
-  exception when invalid_parameter_value then null; end;
-  begin
-    perform public.save_site_entry(e||jsonb_build_object('updated_at',v,'cover_image_path',current_setting('test.image_project')));
-    raise exception 'Cross-kind image accepted';
-  exception when invalid_parameter_value then null; end;
+  exception when foreign_key_violation then null; end;
+  -- A project-uploaded image can now be reused in an article via the library.
+  v := public.save_site_entry(e||jsonb_build_object('updated_at',v,'cover_image_path',current_setting('test.image_project')));
   v := public.save_site_entry(e||jsonb_build_object('updated_at',v,'cover_image_path',null));
   if not exists(select 1 from public.articles where id=item and cover_image_path is null) then raise exception 'Cover unlink failed'; end if;
   if not exists(select 1 from storage.objects where bucket_id='content-images' and name=current_setting('test.image_article')) then raise exception 'Unlink deleted asset'; end if;

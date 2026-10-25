@@ -3,6 +3,7 @@ import { article, project } from "../fixtures/admin-content";
 import { saveContentSchema } from "@/lib/admin/content";
 import {
   contentImageUrl,
+  coverSourceFromUrl,
   MAX_IMAGE_BYTES,
   validateImageFile,
 } from "@/lib/content-images";
@@ -43,7 +44,7 @@ describe("content images", () => {
       "فارغة",
     );
   });
-  it("limits saved covers to their content folder and fixed project host", () => {
+  it("allows reusing library covers across content kinds and limits storage paths", () => {
     expect(
       saveContentSchema.safeParse({ ...article, cover_image_path: path })
         .success,
@@ -51,7 +52,7 @@ describe("content images", () => {
     expect(
       saveContentSchema.safeParse({ ...project, cover_image_path: path })
         .success,
-    ).toBe(false);
+    ).toBe(true);
     expect(contentImageUrl(path)).toBe(
       "https://cdoaudugbjrkhyhivaaa.supabase.co/storage/v1/object/public/content-images/" +
         path,
@@ -72,6 +73,35 @@ describe("content images", () => {
       saveContentSchema.safeParse({
         ...article,
         cover_image_alt: { ar: "a".repeat(201), en: "" },
+      }).success,
+    ).toBe(false);
+  });
+  it("accepts HTTPS image links and normalizes our own bucket URLs", () => {
+    expect(coverSourceFromUrl("https://images.example.com/cover.jpg")).toEqual({
+      cover_image_path: null,
+      cover_image_url: "https://images.example.com/cover.jpg",
+    });
+    expect(contentImageUrl(null, "https://images.example.com/cover.jpg")).toBe(
+      "https://images.example.com/cover.jpg",
+    );
+    expect(coverSourceFromUrl(contentImageUrl(path)! + "?download=1")).toEqual({
+      cover_image_path: path,
+      cover_image_url: null,
+    });
+    for (const url of [
+      "javascript:alert(1)",
+      "data:image/png;base64,abc",
+      "http://example.com/a.jpg",
+      "https://user:password@example.com/a.jpg",
+      "/image.png",
+    ]) {
+      expect(() => coverSourceFromUrl(url)).toThrow();
+    }
+    expect(
+      saveContentSchema.safeParse({
+        ...article,
+        cover_image_path: path,
+        cover_image_url: "https://example.com/a.jpg",
       }).success,
     ).toBe(false);
   });

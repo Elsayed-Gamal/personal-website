@@ -1,10 +1,11 @@
 "use client";
 import { AdminLink as Link } from "./admin-link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Files, Mail, Settings } from "lucide-react";
+import { LayoutDashboard, Files, Mail, Settings, Images } from "lucide-react";
 const items = [
   { href: "/admin/dashboard", label: "لوحة التحكم", icon: LayoutDashboard },
   { href: "/admin/content", label: "إدارة المحتوى", icon: Files },
+  { href: "/admin/media", label: "مكتبة الصور", icon: Images },
   { href: "/admin/messages", label: "الرسائل", icon: Mail },
   { href: "/admin/settings", label: "إعدادات الموقع", icon: Settings },
 ];

@@ -2,6 +2,7 @@ import type { ArticleEdit, ProjectEdit } from "../../src/lib/admin/content";
 export const article: ArticleEdit = {
   kind: "article",
   cover_image_path: null,
+  cover_image_url: null,
   cover_image_alt: { ar: "", en: "" },
   id: "article-test",
   updated_at: "2026-10-24T00:00:00Z",
@@ -23,6 +24,7 @@ export const article: ArticleEdit = {
 export const project: ProjectEdit = {
   kind: "project",
   cover_image_path: null,
+  cover_image_url: null,
   cover_image_alt: { ar: "", en: "" },
   id: "project-test",
   updated_at: "2026-10-24T00:00:00Z",

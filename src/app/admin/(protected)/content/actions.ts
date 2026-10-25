@@ -2,12 +2,18 @@
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth/admin";
 import { createAuthClient } from "@/lib/supabase/auth-server";
+import { coverSourceFromUrl } from "@/lib/content-images";
 import {
   deleteContentSchema,
   saveContentSchema,
   type ContentResult,
 } from "@/lib/admin/content";
 function failure(code?: string) {
+  if (code === "23503")
+    return {
+      ok: false as const,
+      message: "الصورة غير متاحة أو جارٍ حذفها. اختر صورة أخرى من المكتبة.",
+    };
   if (code === "40001")
     return {
       ok: false as const,
@@ -41,6 +47,7 @@ function refreshContent() {
   revalidatePath("/en", "layout");
   revalidatePath("/admin/content");
   revalidatePath("/admin/dashboard");
+  revalidatePath("/admin/media");
 }
 export async function saveContent(input: unknown): Promise<ContentResult> {
   await requireAdmin();
@@ -54,6 +61,13 @@ export async function saveContent(input: unknown): Promise<ContentResult> {
       ),
     };
   const entry = parsed.data;
+  if (entry.cover_image_url) {
+    try {
+      Object.assign(entry, coverSourceFromUrl(entry.cover_image_url));
+    } catch {
+      return { ok: false, message: "رابط الصورة غير صالح." };
+    }
+  }
   if (entry.kind === "article") {
     entry.category = {
       ar: entry.category.ar || entry.category.en,

@@ -9,6 +9,10 @@ import {
 } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { article, project } from "../fixtures/admin-content";
+vi.mock("@/app/admin/(protected)/media/actions", () => ({
+  loadMedia: vi.fn(),
+  deleteMedia: vi.fn(),
+}));
 const mock = vi.hoisted(() => ({
   save: vi.fn(),
   remove: vi.fn(),

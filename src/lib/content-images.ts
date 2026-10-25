@@ -16,6 +16,25 @@ export const imagePathSchema = z
   );
 export const coverImageFields = {
   cover_image_path: imagePathSchema.nullable().default(null),
+  cover_image_url: z
+    .string()
+    .trim()
+    .max(2000)
+    .refine((value) => {
+      try {
+        const url = new URL(value);
+        return (
+          url.protocol === "https:" &&
+          !!url.hostname &&
+          !url.username &&
+          !url.password
+        );
+      } catch {
+        return false;
+      }
+    }, "أدخل رابط صورة كاملًا يبدأ بـ https:// بدون بيانات دخول.")
+    .nullable()
+    .default(null),
   cover_image_alt: z
     .object({
       ar: z.string().trim().max(200),
@@ -24,9 +43,34 @@ export const coverImageFields = {
     .default({ ar: "", en: "" }),
 };
 
-export function contentImageUrl(path: string | null | undefined) {
-  if (!path || !imagePathSchema.safeParse(path).success) return null;
-  return `${SUPABASE_PROJECT_URL}/storage/v1/object/public/${CONTENT_IMAGES_BUCKET}/${path}`;
+export function contentImageUrl(
+  path: string | null | undefined,
+  externalUrl?: string | null,
+) {
+  if (path && imagePathSchema.safeParse(path).success)
+    return `${SUPABASE_PROJECT_URL}/storage/v1/object/public/${CONTENT_IMAGES_BUCKET}/${path}`;
+  return externalUrl &&
+    coverImageFields.cover_image_url.safeParse(externalUrl).success
+    ? externalUrl
+    : null;
+}
+
+// Pasting one of our public URLs is equivalent to choosing it from the library.
+export function coverSourceFromUrl(value: string) {
+  const url = coverImageFields.cover_image_url.parse(value);
+  if (!url) return { cover_image_path: null, cover_image_url: null };
+  const parsed = new URL(url);
+  const prefix = `/storage/v1/object/public/${CONTENT_IMAGES_BUCKET}/`;
+  if (
+    parsed.origin === SUPABASE_PROJECT_URL &&
+    parsed.pathname.startsWith(prefix)
+  ) {
+    const path = imagePathSchema.parse(
+      decodeURIComponent(parsed.pathname.slice(prefix.length)),
+    );
+    return { cover_image_path: path, cover_image_url: null };
+  }
+  return { cover_image_path: null, cover_image_url: parsed.href };
 }
 
 export function validateImageFile(file: Pick<File, "size" | "type">) {

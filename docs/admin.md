@@ -1,6 +1,6 @@
 # Admin foundation
 
-The Arabic admin area uses a separate root layout and is not linked from the public navigation. Routes: `/admin/dashboard`, `/admin/content`, `/admin/messages`, `/admin/settings`. `/admin` redirects to the dashboard after authorization; visitors are redirected to `/admin/login`.
+The Arabic admin area uses a separate root layout and is not linked from the public navigation. Routes: `/admin/dashboard`, `/admin/content`, `/admin/media`, `/admin/messages`, `/admin/settings`. The [media library](content-images.md) supports reusable cover selection, link copying and confirmed deletion of unused images. `/admin` redirects to the dashboard after authorization; visitors are redirected to `/admin/login`.
 
 Settings provides live editors for the Arabic/English site identity, navigation, footer, labels, every homepage section, About, and Contact. [Content management](content-management.md) supports article/project CRUD, publication and translations. The [private inbox](messages.md) receives contact-form messages and supports read/unread state and deletion. The [dashboard](dashboard.md) shows live inventory, inbox activity and page-view analytics. Every loader/action must call `requireAdmin()`; a protected layout alone is insufficient.
 

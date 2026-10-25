@@ -26,6 +26,8 @@ Publish both project translations before publishing a project (the present desig
 
 ## Initial migration and future changes
 
+Migration `media_library` adds optional `cover_image_url` to articles/projects with exclusive path-or-URL checks. `list_content_images` and `prepare_content_image_deletion` require the verified owner. Private RLS-protected `content_image_deletions` reservations and content/settings triggers serialize reference checks with image deletion. Storage DELETE requires an unused, reserved object in `content-images`; the app removes files through the Storage API. See [media library](content-images.md) and `scripts/media-library-schema.sql`.
+
 `drizzle/0000_content_schema.sql`, `drizzle/0001_content_seed.sql`, and `drizzle/0002_page_content.sql` were applied using Supabase's migration API as `website_content_schema`, `website_initial_content`, and `move_page_copy_to_database`. Supabase's migration history is authoritative. Do not apply the schema SQL again or run Drizzle push/migrate against an assumed empty database. For future changes, add a reviewed incremental SQL migration, update the Drizzle definitions, and apply it only to this project through Supabase.
 
 `scripts/seed-content.json` preserves the original projects and articles, while `scripts/page-content-seed.json` preserves the localized page copy. Neither file is a runtime fallback. The database contains 3 projects, 6 project translations, 3 articles, 4 article translations, and 16 site-content records. The page-content keys are `ui`, `home`, `about`, `contact`, `work`, `blog`, `project_detail`, and `article_detail`, each in Arabic and English.
