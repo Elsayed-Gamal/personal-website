@@ -1,6 +1,31 @@
 "use client";
-import { useState, useTransition } from "react";
-import { ArrowRight, Eye, Save } from "lucide-react";
+import { useLayoutEffect, useRef, useState, useTransition } from "react";
+import {
+  ArrowRight,
+  BookOpen,
+  Bold,
+  Code,
+  CornerDownLeft,
+  Eye,
+  Heading1,
+  Heading2,
+  Heading3,
+  Heading4,
+  Heading5,
+  Heading6,
+  ImagePlus,
+  Images,
+  Italic,
+  Link,
+  List,
+  ListOrdered,
+  ListTodo,
+  Minus,
+  Quote,
+  Save,
+  Strikethrough,
+  Table,
+} from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeSanitize from "rehype-sanitize";
@@ -8,12 +33,459 @@ import { saveContent } from "@/app/admin/(protected)/content/actions";
 import type {
   ArticleEdit,
   ContentEntry,
+  ContentKind,
   ProjectEdit,
 } from "@/lib/admin/content";
 import { useUnsavedChanges } from "./use-unsaved-changes";
 import { ContentImageField } from "./content-image-field";
+import { MediaLibrary } from "./media-library";
+import { uploadContentImage } from "@/lib/admin/upload-image";
+import { contentImageUrl, IMAGE_TYPES } from "@/lib/content-images";
 
 type Locale = "ar" | "en";
+type MarkdownAction =
+  | "bold"
+  | "italic"
+  | "strikethrough"
+  | "inline-code"
+  | "heading1"
+  | "heading2"
+  | "heading3"
+  | "heading4"
+  | "heading5"
+  | "heading6"
+  | "unordered-list"
+  | "ordered-list"
+  | "task-list"
+  | "link"
+  | "image"
+  | "image-library"
+  | "quote"
+  | "code"
+  | "table"
+  | "footnote"
+  | "horizontal-rule"
+  | "hard-break";
+
+const markdownTools: {
+  action: MarkdownAction;
+  label: string;
+  icon: typeof Bold;
+}[] = [
+  { action: "bold", label: "عريض", icon: Bold },
+  { action: "italic", label: "مائل", icon: Italic },
+  { action: "strikethrough", label: "يتوسطه خط", icon: Strikethrough },
+  { action: "inline-code", label: "كود داخل السطر", icon: Code },
+  { action: "heading1", label: "عنوان رئيسي", icon: Heading1 },
+  { action: "heading2", label: "عنوان فرعي", icon: Heading2 },
+  { action: "heading3", label: "عنوان مستوى 3", icon: Heading3 },
+  { action: "heading4", label: "عنوان مستوى 4", icon: Heading4 },
+  { action: "heading5", label: "عنوان مستوى 5", icon: Heading5 },
+  { action: "heading6", label: "عنوان مستوى 6", icon: Heading6 },
+  { action: "unordered-list", label: "قائمة نقطية", icon: List },
+  { action: "ordered-list", label: "قائمة مرقمة", icon: ListOrdered },
+  { action: "task-list", label: "قائمة مهام", icon: ListTodo },
+  { action: "link", label: "رابط", icon: Link },
+  { action: "image", label: "صورة", icon: ImagePlus },
+  { action: "image-library", label: "اختيار صورة من المكتبة أو رفع صورة", icon: Images },
+  { action: "quote", label: "اقتباس", icon: Quote },
+  { action: "code", label: "كود متعدد الأسطر", icon: Code },
+  { action: "table", label: "جدول", icon: Table },
+  { action: "footnote", label: "حاشية سفلية", icon: BookOpen },
+  { action: "horizontal-rule", label: "فاصل أفقي", icon: Minus },
+  { action: "hard-break", label: "سطر جديد", icon: CornerDownLeft },
+];
+
+function MarkdownField({
+  label,
+  name,
+  value,
+  onChange,
+  errors,
+  maxLength,
+  dir,
+  hint,
+  kind,
+  onBusyChange,
+}: {
+  label: string;
+  name: string;
+  value: string;
+  onChange: (value: string) => void;
+  errors: Record<string, string>;
+  maxLength: number;
+  dir: "ltr" | "rtl";
+  hint: string;
+  kind: ContentKind;
+  onBusyChange: (busy: boolean) => void;
+}) {
+  const id = "content-" + name;
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const pendingSelection = useRef<{ start: number; end: number } | null>(null);
+  const [notice, setNotice] = useState("");
+  const [imagePickerOpen, setImagePickerOpen] = useState(false);
+  const [imageUploadBusy, setImageUploadBusy] = useState(false);
+  const [imagePickerError, setImagePickerError] = useState("");
+  const imageFileInput = useRef<HTMLInputElement>(null);
+  const imageInsertionRange = useRef<{ start: number; end: number } | null>(
+    null,
+  );
+
+  useLayoutEffect(() => {
+    const selection = pendingSelection.current;
+    const textarea = textareaRef.current;
+    if (!selection || !textarea) return;
+    textarea.focus();
+    textarea.setSelectionRange(selection.start, selection.end);
+    pendingSelection.current = null;
+  }, [value]);
+
+  function insertImage(url: string) {
+    const textarea = textareaRef.current;
+    const range = imageInsertionRange.current ?? {
+      start: textarea?.selectionStart ?? value.length,
+      end: textarea?.selectionEnd ?? value.length,
+    };
+    const selected = value.slice(range.start, range.end);
+    const altText = selected || "وصف الصورة";
+    const markdown = `![${altText}](${url})`;
+    const nextValue =
+      value.slice(0, range.start) + markdown + value.slice(range.end);
+    if (nextValue.length > maxLength) {
+      const message = "لا يمكن إدراج الصورة لأن المحتوى بلغ الحد الأقصى.";
+      setNotice(message);
+      setImagePickerError(message);
+      return false;
+    }
+    const altStart = range.start + 2;
+    pendingSelection.current = {
+      start: altStart,
+      end: altStart + altText.length,
+    };
+    imageInsertionRange.current = null;
+    setNotice("");
+    setImagePickerError("");
+    setImagePickerOpen(false);
+    onChange(nextValue);
+    return true;
+  }
+
+  function openImagePicker() {
+    const textarea = textareaRef.current;
+    const selectionStart =
+      textarea && document.activeElement === textarea
+        ? textarea.selectionStart
+        : value.length;
+    const selectionEnd =
+      textarea && document.activeElement === textarea
+        ? textarea.selectionEnd
+        : value.length;
+    imageInsertionRange.current = {
+      start: selectionStart,
+      end: selectionEnd,
+    };
+    setImagePickerError("");
+    setImagePickerOpen(true);
+  }
+
+  async function uploadImage(file: File) {
+    setImageUploadBusy(true);
+    onBusyChange(true);
+    setImagePickerError("");
+    try {
+      const path = await uploadContentImage(file, kind);
+      const url = contentImageUrl(path);
+      if (!url) throw new Error("تعذر إنشاء رابط للصورة المرفوعة.");
+      insertImage(url);
+    } catch (cause) {
+      setImagePickerError(
+        cause instanceof Error ? cause.message : "تعذر رفع الصورة.",
+      );
+    } finally {
+      setImageUploadBusy(false);
+      onBusyChange(false);
+    }
+  }
+
+  function applyMarkdown(action: MarkdownAction) {
+    if (action === "image-library") {
+      openImagePicker();
+      return;
+    }
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selected = value.slice(start, end);
+    let before = "";
+    let after = "";
+    let placeholder = "";
+    let selectPlaceholder = false;
+    let blockPrefix = "";
+    let footnoteInsertion: { text: string; selectionStart: number } | null =
+      null;
+
+    switch (action) {
+      case "bold":
+        before = "**";
+        after = "**";
+        placeholder = "نص عريض";
+        break;
+      case "italic":
+        before = "*";
+        after = "*";
+        placeholder = "نص مائل";
+        break;
+      case "strikethrough":
+        before = "~~";
+        after = "~~";
+        placeholder = "نص يتوسطه خط";
+        break;
+      case "inline-code":
+        before = "`";
+        after = "`";
+        placeholder = "كود";
+        break;
+      case "heading1":
+        blockPrefix = "# ";
+        placeholder = "عنوان";
+        break;
+      case "heading2":
+        blockPrefix = "## ";
+        placeholder = "عنوان";
+        break;
+      case "heading3":
+        blockPrefix = "### ";
+        placeholder = "عنوان";
+        break;
+      case "heading4":
+        blockPrefix = "#### ";
+        placeholder = "عنوان";
+        break;
+      case "heading5":
+        blockPrefix = "##### ";
+        placeholder = "عنوان";
+        break;
+      case "heading6":
+        blockPrefix = "###### ";
+        placeholder = "عنوان";
+        break;
+      case "unordered-list":
+        blockPrefix = "- ";
+        placeholder = "عنصر قائمة";
+        break;
+      case "ordered-list":
+        blockPrefix = "1. ";
+        placeholder = "عنصر قائمة";
+        break;
+      case "task-list":
+        blockPrefix = "- [ ] ";
+        placeholder = "مهمة";
+        break;
+      case "link":
+        before = "[";
+        after = "](https://)";
+        placeholder = "نص الرابط";
+        selectPlaceholder = true;
+        break;
+      case "image":
+        before = "![";
+        after = "](https://image-url)";
+        placeholder = "وصف الصورة";
+        selectPlaceholder = true;
+        break;
+      case "quote":
+        blockPrefix = "> ";
+        placeholder = "اقتباس";
+        break;
+      case "code":
+        before = "```\n";
+        after = "\n```";
+        placeholder = "كود";
+        break;
+      case "table":
+        placeholder =
+          "| العمود 1 | العمود 2 |\n| --- | --- |\n| قيمة | قيمة |";
+        selectPlaceholder = true;
+        break;
+      case "footnote": {
+        const existingIds = Array.from(
+          value.matchAll(/\[\^(\d+)\]/g),
+          (match) => Number(match[1]),
+        );
+        const id = Math.max(0, ...existingIds) + 1;
+        const reference = `[^${id}]`;
+        const definitionPrefix = `\n\n${reference}: `;
+        placeholder = "نص الحاشية";
+        footnoteInsertion = {
+          text: `${selected}${reference}${definitionPrefix}${placeholder}`,
+          selectionStart:
+            start + selected.length + reference.length + definitionPrefix.length,
+        };
+        break;
+      }
+      case "horizontal-rule":
+        placeholder = "---";
+        break;
+      case "hard-break":
+        before = "  \n";
+        break;
+    }
+
+    const replacement = selected || placeholder;
+    let inserted: string;
+    let selection: { start: number; end: number };
+    if (footnoteInsertion) {
+      inserted = footnoteInsertion.text;
+      selection = {
+        start: footnoteInsertion.selectionStart,
+        end: footnoteInsertion.selectionStart + placeholder.length,
+      };
+    } else if (blockPrefix) {
+      const lines = replacement.split("\n");
+      inserted = lines.map((line) => blockPrefix + line).join("\n");
+      selection = {
+        start: start + blockPrefix.length,
+        end: start + inserted.length,
+      };
+    } else {
+      inserted = before + replacement + after;
+      const contentStart = start + before.length;
+      selection = selectPlaceholder
+        ? { start: contentStart, end: contentStart + replacement.length }
+        : action === "horizontal-rule"
+          ? { start: start + inserted.length, end: start + inserted.length }
+        : {
+            start: selected ? contentStart : contentStart + replacement.length,
+            end: selected ? contentStart + replacement.length : contentStart + replacement.length,
+          };
+    }
+
+    const nextValue = value.slice(0, start) + inserted + value.slice(end);
+    if (nextValue.length > maxLength) {
+      setNotice("لا يمكن إدراج التنسيق لأن المحتوى بلغ الحد الأقصى.");
+      return;
+    }
+    setNotice("");
+    pendingSelection.current = selection;
+    onChange(nextValue);
+  }
+
+  return (
+    <div className="settings-field markdown-field">
+      <label htmlFor={id}>{label}</label>
+      <div className="markdown-toolbar" role="group" aria-label="أدوات Markdown">
+        {markdownTools.map(({ action, label: toolLabel, icon: Icon }) => (
+          <button
+            key={action}
+            type="button"
+            aria-label={toolLabel}
+            title={toolLabel}
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={() => applyMarkdown(action)}
+          >
+            <Icon size={17} aria-hidden="true" />
+          </button>
+        ))}
+      </div>
+      {imagePickerOpen && (
+        <div
+          className="markdown-image-overlay"
+          onKeyDown={(event) => {
+            if (event.key === "Escape" && !imageUploadBusy)
+              setImagePickerOpen(false);
+          }}
+        >
+          <section
+            className="markdown-image-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={id + "-image-dialog-title"}
+          >
+            <div className="markdown-image-dialog-heading">
+              <h3 id={id + "-image-dialog-title"}>إدراج صورة في المحتوى</h3>
+              <button
+                type="button"
+                className="settings-reset"
+                disabled={imageUploadBusy}
+                onClick={() => setImagePickerOpen(false)}
+              >
+                إغلاق
+              </button>
+            </div>
+            <div className="markdown-image-upload">
+              <input
+                ref={imageFileInput}
+                type="file"
+                accept={Object.keys(IMAGE_TYPES).join(",")}
+                aria-label="رفع صورة للمكتبة"
+                hidden
+                disabled={imageUploadBusy}
+                onChange={(event) => {
+                  const file = event.currentTarget.files?.[0];
+                  event.currentTarget.value = "";
+                  if (file) void uploadImage(file);
+                }}
+              />
+              <button
+                type="button"
+                className="admin-button"
+                disabled={imageUploadBusy}
+                onClick={() => imageFileInput.current?.click()}
+              >
+                <ImagePlus size={17} aria-hidden="true" />
+                {imageUploadBusy ? "جارٍ رفع الصورة…" : "رفع صورة جديدة"}
+              </button>
+              <small className="admin-muted">
+                JPG أو PNG أو WebP، بحد أقصى 5 ميجابايت.
+              </small>
+            </div>
+            {imagePickerError && (
+              <p role="alert" className="settings-notice admin-error">
+                {imagePickerError}
+              </p>
+            )}
+            <MediaLibrary
+              disabled={imageUploadBusy}
+              onSelect={(image) => {
+                const url = contentImageUrl(image.path);
+                if (url) insertImage(url);
+                else
+                  setImagePickerError("تعذر إنشاء رابط للصورة المختارة.");
+              }}
+            />
+          </section>
+        </div>
+      )}
+      <textarea
+        ref={textareaRef}
+        id={id}
+        rows={18}
+        value={value}
+        onChange={(event) => {
+          setNotice("");
+          onChange(event.target.value);
+        }}
+        maxLength={maxLength}
+        dir={dir}
+        aria-invalid={!!errors[name]}
+        aria-describedby={id + "-hint"}
+      />
+      <small
+        id={id + "-hint"}
+        className={errors[name] ? "admin-error" : "admin-muted"}
+      >
+        {errors[name] || hint}
+      </small>
+      {notice && (
+        <small role="alert" className="admin-error">
+          {notice}
+        </small>
+      )}
+    </div>
+  );
+}
+
 function Input({
   label,
   name,
@@ -551,7 +1023,7 @@ export function ContentEditor({
                     </>
                   )}
                   <div className="content-full">
-                    <Input
+                    <MarkdownField
                       label={
                         draft.kind === "article"
                           ? "نص المقال (Markdown)"
@@ -561,10 +1033,11 @@ export function ContentEditor({
                       value={translation.body}
                       onChange={(body) => patchTranslation({ body })}
                       errors={errors}
-                      multiline
                       maxLength={80000}
                       dir={language === "ar" ? "rtl" : "ltr"}
                       hint="يدعم العناوين والقوائم والروابط والجداول والاقتباسات وأكواد البرمجة بصيغة Markdown."
+                      kind={draft.kind}
+                      onBusyChange={setUploading}
                     />
                   </div>
                 </div>
