@@ -210,7 +210,7 @@ export const articleSchema = z.object({
 export type Article = z.infer<typeof articleSchema>;
 
 export function getArticleLocale(
-  article: Article,
+  article: Article | ArticleSummary,
   requestedLocale: Locale,
 ): Locale {
   if (article.translations[requestedLocale]) return requestedLocale;
@@ -219,6 +219,21 @@ export function getArticleLocale(
     throw new Error("Article has no published translation");
   return otherLocale;
 }
-export function getArticleTranslation(article: Article, locale: Locale) {
+export function getArticleTranslation(
+  article: Article | ArticleSummary,
+  locale: Locale,
+) {
   return article.translations[getArticleLocale(article, locale)]!;
 }
+
+export type ArticleSummary = Omit<Article, "translations"> & {
+  translations: Partial<
+    Record<Locale, Omit<z.infer<typeof articleTranslationSchema>, "body">>
+  >;
+};
+export type ProjectSummary = Omit<Project, "content"> & {
+  content: Record<
+    Locale,
+    Omit<z.infer<typeof projectTranslationSchema>, "body">
+  >;
+};

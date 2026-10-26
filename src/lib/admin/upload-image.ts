@@ -18,19 +18,38 @@ export async function uploadContentImage(file: File, kind: ContentKind) {
     throw new Error("تعذر قراءة الصورة. اختر ملف صورة سليمًا.");
   }
   const tooLarge = bitmap.width * bitmap.height > 40000000;
-  bitmap.close();
-  if (tooLarge)
+  if (tooLarge) {
+    bitmap.close();
     throw new Error(
       "أبعاد الصورة كبيرة جدًا. استخدم صورة أصغر من 40 ميجابكسل.",
     );
-  const extension = IMAGE_TYPES[file.type as keyof typeof IMAGE_TYPES];
+  }
+  let upload = file;
+  try {
+    const scale = Math.min(1, 1920 / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+    canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+    const context = canvas.getContext("2d");
+    if (context) {
+      context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+      const blob = await new Promise<Blob | null>((resolve) =>
+        canvas.toBlob(resolve, "image/webp", 0.85),
+      );
+      if (blob && blob.size < file.size)
+        upload = new File([blob], "image.webp", { type: blob.type });
+    }
+  } finally {
+    bitmap.close();
+  }
+  const extension = IMAGE_TYPES[upload.type as keyof typeof IMAGE_TYPES];
   const path = `${kind === "article" ? "articles" : "projects"}/${crypto.randomUUID()}.${extension}`;
   const client = createBrowserAuthClient();
   const { error } = await client.storage
     .from(CONTENT_IMAGES_BUCKET)
-    .upload(path, file, {
+    .upload(path, upload, {
       cacheControl: "31536000",
-      contentType: file.type,
+      contentType: upload.type,
       upsert: false,
     });
   if (error) {

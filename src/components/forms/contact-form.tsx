@@ -11,7 +11,7 @@ export function ContactForm({
 }: {
   locale: Locale;
   copy: SiteContentMap["contact"]["form"];
-  requestId: string;
+  requestId?: string;
 }) {
   const [values, setValues] = useState({
     name: "",
@@ -19,7 +19,7 @@ export function ContactForm({
     message: "",
     website: "",
   });
-  const [receipt, setReceipt] = useState(requestId);
+  const [receipt, setReceipt] = useState<string | undefined>(requestId);
   const [result, setResult] = useState<ContactResult | null>(null);
   const [pending, startTransition] = useTransition();
   function change(field: keyof typeof values, value: string) {
@@ -51,9 +51,9 @@ export function ContactForm({
         e.preventDefault();
         startTransition(async () => {
           try {
-            setResult(
-              await submitContact({ ...values, locale, requestId: receipt }),
-            );
+            const requestId = receipt ?? crypto.randomUUID();
+            setReceipt(requestId);
+            setResult(await submitContact({ ...values, locale, requestId }));
           } catch {
             setResult({ status: "error" });
           }

@@ -78,13 +78,10 @@ export function MediaLibrary({
       const result = await deleteMedia(image.path);
       if (result.ok) setNotice(result.message);
       else setError(result.message);
-      // Refresh also after failure: another editor may have started using it.
-      const refreshed = await loadMedia({ ...query, page: 0 });
-      if (refreshed.ok) {
-        setData(refreshed.page);
-        setQuery({ ...query, page: 0 });
-        setRevision((n) => n + 1);
-      }
+      // Let the effect perform exactly one refresh, including failed deletes.
+      setLoading(true);
+      setQuery({ ...query, page: 0 });
+      setRevision((n) => n + 1);
     } catch {
       setError("تعذر تأكيد الحذف. حدّث المكتبة وأعد المحاولة.");
     } finally {
@@ -151,7 +148,6 @@ export function MediaLibrary({
                   alt={image.path.split("/").pop()!}
                   fill
                   sizes="(max-width: 640px) 80vw, 240px"
-                  unoptimized
                 />
               </div>
               <div className="media-card-details">

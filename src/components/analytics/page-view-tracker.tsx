@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
-import { publicAnalyticsPath } from "@/lib/analytics";
+import { publicAnalyticsPath } from "@/lib/analytics-path";
 export function PageViewTracker({ enabled }: { enabled: boolean }) {
   const pathname = usePathname();
   const lastSent = useRef<string | null>(null);

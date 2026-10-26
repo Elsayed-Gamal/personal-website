@@ -1,5 +1,5 @@
 "use server";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { requireAdmin } from "@/lib/auth/admin";
 import { createAuthClient } from "@/lib/supabase/auth-server";
 import {
@@ -44,6 +44,7 @@ export async function saveSettings(
         message:
           "تغير المحتوى منذ فتح الصفحة أو لم تعد لديك صلاحية التعديل. أعد تحميل النسخة الحالية قبل الحفظ.",
       };
+    updateTag("public-content");
     revalidatePath("/" + locale, "layout");
     revalidatePath("/admin/settings");
     return {

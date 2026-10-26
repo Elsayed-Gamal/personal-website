@@ -1,6 +1,6 @@
 import { ArrowUpRight } from "lucide-react";
 import { ContentCover } from "@/components/ui/content-cover";
-import type { Article, Locale } from "@/lib/content";
+import type { ArticleSummary, Locale } from "@/lib/content";
 import { getArticleLocale, getArticleTranslation } from "@/lib/content";
 import { getSiteUI } from "@/lib/db/content";
 import { SiteLink as Link } from "@/components/layout/site-link";
@@ -9,7 +9,7 @@ export async function ArticleCard({
   article,
   locale,
 }: {
-  article: Article;
+  article: ArticleSummary;
   locale: Locale;
 }) {
   const articleLocale = getArticleLocale(article, locale);

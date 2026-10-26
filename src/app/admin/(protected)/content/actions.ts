@@ -1,5 +1,5 @@
 "use server";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { requireAdmin } from "@/lib/auth/admin";
 import { createAuthClient } from "@/lib/supabase/auth-server";
 import { coverSourceFromUrl } from "@/lib/content-images";
@@ -43,6 +43,7 @@ function failure(code?: string) {
   };
 }
 function refreshContent() {
+  updateTag("public-content");
   revalidatePath("/ar", "layout");
   revalidatePath("/en", "layout");
   revalidatePath("/admin/content");

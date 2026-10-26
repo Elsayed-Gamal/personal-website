@@ -17,11 +17,13 @@ const mock = vi.hoisted(() => ({
   save: vi.fn(),
   remove: vi.fn(),
   load: vi.fn(),
+  list: vi.fn(),
   mediaLoad: vi.fn(),
   uploadImage: vi.fn(),
 }));
 vi.mock("@/app/admin/(protected)/content/read-actions", () => ({
   loadContent: mock.load,
+  loadContentPage: mock.list,
 }));
 vi.mock("@/app/admin/(protected)/media/actions", () => ({
   loadMedia: mock.mediaLoad,
@@ -59,7 +61,15 @@ describe("content manager", () => {
     const { contentSummarySchema } =
       await import("../../src/lib/admin/content");
     const summary = contentSummarySchema.parse(article);
-    render(createElement(ContentManager, { initialEntries: [summary] }));
+    render(
+      createElement(ContentManager, {
+        initialPage: {
+          items: [summary],
+          total: 1,
+          counts: { article: 1, project: 0, published: 1, draft: 0 },
+        },
+      }),
+    );
     expect(mock.load).not.toHaveBeenCalled();
     mock.load.mockResolvedValueOnce({ ok: false, message: "تعذر التحميل" });
     fireEvent.click(
@@ -99,19 +109,47 @@ describe("content manager", () => {
   });
   it("filters by kind and search and requires confirmation before deleting", async () => {
     render(
-      createElement(ContentManager, { initialEntries: [article, project] }),
+      createElement(ContentManager, {
+        initialPage: {
+          items: [article],
+          total: 1,
+          counts: { article: 1, project: 1, published: 1, draft: 0 },
+        },
+      }),
     );
     expect(screen.getByText(article.translations[0].title)).toBeTruthy();
     expect(screen.queryByText(project.translations[0].title)).toBeNull();
+    mock.list.mockResolvedValueOnce({
+      ok: true,
+      page: {
+        items: [],
+        total: 0,
+        counts: { article: 1, project: 1, published: 1, draft: 0 },
+      },
+    });
     fireEvent.change(screen.getByLabelText("البحث في المحتوى"), {
       target: { value: "not-found" },
     });
-    expect(screen.getByText("لا توجد نتائج مطابقة")).toBeTruthy();
+    expect(await screen.findByText("لا توجد نتائج مطابقة")).toBeTruthy();
+    expect(mock.list).toHaveBeenCalledWith({
+      kind: "article",
+      page: 1,
+      search: "not-found",
+      status: "all",
+    });
+    mock.list.mockResolvedValue({
+      ok: true,
+      page: {
+        items: [article],
+        total: 1,
+        counts: { article: 1, project: 1, published: 1, draft: 0 },
+      },
+    });
     fireEvent.change(screen.getByLabelText("البحث في المحتوى"), {
       target: { value: "" },
     });
     fireEvent.click(
-      screen.getByRole("button", {
+      await screen.findByRole("button", {
         name: "حذف " + article.translations[0].title,
       }),
     );
@@ -152,7 +190,7 @@ describe("content manager", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "معاينة المحتوى" }));
     expect(
-      screen.getByRole("heading", { name: "Preview heading" }),
+      await screen.findByRole("heading", { name: "Preview heading" }),
     ).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "العودة للتحرير" }));
     mock.save.mockResolvedValue({
@@ -198,7 +236,7 @@ describe("content manager", () => {
       "عنوان عربي جديد",
     );
   });
-  it("previews project details as sanitized Markdown", () => {
+  it("previews project details as sanitized Markdown", async () => {
     render(
       createElement(ContentEditor, {
         entry: project,
@@ -213,7 +251,9 @@ describe("content manager", () => {
       },
     });
     fireEvent.click(screen.getByRole("button", { name: "معاينة المحتوى" }));
-    expect(screen.getByRole("heading", { name: "النتيجة" })).toBeTruthy();
+    expect(
+      await screen.findByRole("heading", { name: "النتيجة" }),
+    ).toBeTruthy();
     expect(screen.getByText("أداء أفضل").closest("li")).toBeTruthy();
     expect(document.querySelector("script")).toBeNull();
   });
@@ -295,7 +335,7 @@ describe("content manager", () => {
     fireEvent.click(heading);
     expect(body.value).toBe("###### عنوان");
   });
-  it("previews GFM footnotes", () => {
+  it("previews GFM footnotes", async () => {
     render(
       createElement(ContentEditor, {
         entry: article,
@@ -307,7 +347,7 @@ describe("content manager", () => {
       target: { value: "نص المقال[^1]\n\n[^1]: نص الحاشية" },
     });
     fireEvent.click(screen.getByRole("button", { name: "معاينة المحتوى" }));
-    expect(screen.getByText("نص الحاشية")).toBeTruthy();
+    expect(await screen.findByText("نص الحاشية")).toBeTruthy();
   });
   it("selects an existing library image and inserts its Markdown URL", async () => {
     const image = {
@@ -338,8 +378,12 @@ describe("content manager", () => {
         name: "اختيار صورة من المكتبة أو رفع صورة",
       }),
     );
-    fireEvent.click(await screen.findByRole("button", { name: "اختيار الصورة" }));
-    expect(body.value).toBe(`مقدمة![وصف الصورة](${contentImageUrl(image.path)})`);
+    fireEvent.click(
+      await screen.findByRole("button", { name: "اختيار الصورة" }),
+    );
+    expect(body.value).toBe(
+      `مقدمة![وصف الصورة](${contentImageUrl(image.path)})`,
+    );
     expect(screen.queryByRole("dialog")).toBeNull();
     expect(body.selectionStart).toBe("مقدمة![".length);
   });
@@ -374,10 +418,7 @@ describe("content manager", () => {
     await waitFor(() =>
       expect(body.value).toBe(`![وصف الصورة](${contentImageUrl(path)})`),
     );
-    expect(mock.uploadImage).toHaveBeenCalledWith(
-      expect.any(File),
-      "article",
-    );
+    expect(mock.uploadImage).toHaveBeenCalledWith(expect.any(File), "article");
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 });

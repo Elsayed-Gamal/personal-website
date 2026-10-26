@@ -35,14 +35,18 @@ describe("contact form", () => {
       target: { value: "A complete message for testing." },
     });
     mock.submit.mockResolvedValue({ status: "error" });
-    fireEvent.click(screen.getByRole("button", { name: "Send message" }));
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Send message" }),
+    );
     await waitFor(() => expect(screen.getByRole("alert")).toBeTruthy());
     const first = mock.submit.mock.calls[0][0];
     expect(
       (screen.getByLabelText("Your message") as HTMLTextAreaElement).value,
     ).toBe(first.message);
     mock.submit.mockResolvedValue({ status: "sent" });
-    fireEvent.click(screen.getByRole("button", { name: "Send message" }));
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Send message" }),
+    );
     await waitFor(() =>
       expect(screen.getByRole("status").textContent).toContain("received"),
     );

@@ -8,10 +8,19 @@ import {
   waitFor,
 } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-const mock = vi.hoisted(() => ({ mark: vi.fn(), remove: vi.fn() }));
+const mock = vi.hoisted(() => ({
+  mark: vi.fn(),
+  remove: vi.fn(),
+  load: vi.fn(),
+  list: vi.fn(),
+}));
 vi.mock("@/app/admin/(protected)/messages/actions", () => ({
   setMessageRead: mock.mark,
   deleteMessage: mock.remove,
+}));
+vi.mock("@/app/admin/(protected)/messages/read-actions", () => ({
+  loadMessage: mock.load,
+  loadMessagePage: mock.list,
 }));
 import { MessageInbox } from "../../src/components/admin/message-inbox";
 const message = {
@@ -37,8 +46,16 @@ afterEach(() => {
 });
 describe("private message inbox", () => {
   it("marks opened messages as read, supports unread, and deletes only after confirmation", async () => {
+    const dispatch = vi.spyOn(window, "dispatchEvent");
     mock.mark.mockResolvedValue({ ok: true, readAt: "2026-10-24T01:00:00Z" });
-    render(createElement(MessageInbox, { initialMessages: [message] }));
+    const page = {
+      items: [{ ...message, snippet: message.message }],
+      total: 1,
+      counts: { all: 1, unread: 1, read: 0 },
+    };
+    mock.load.mockResolvedValue({ ok: true, message });
+    mock.list.mockResolvedValue({ ok: true, page });
+    render(createElement(MessageInbox, { initialPage: page }));
     fireEvent.click(screen.getByRole("button", { name: /Test Sender/ }));
     await waitFor(() =>
       expect(mock.mark).toHaveBeenCalledWith({
@@ -46,6 +63,14 @@ describe("private message inbox", () => {
         expectedReadAt: null,
         read: true,
       }),
+    );
+    await waitFor(() =>
+      expect(dispatch).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "admin:unread-messages",
+          detail: -1,
+        }),
+      ),
     );
     await waitFor(() =>
       expect(
@@ -68,6 +93,14 @@ describe("private message inbox", () => {
       expect(
         screen.getByRole("button", { name: "تعليم كمقروءة" }),
       ).toBeTruthy(),
+    );
+    await waitFor(() =>
+      expect(dispatch).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "admin:unread-messages",
+          detail: 1,
+        }),
+      ),
     );
     await waitFor(() =>
       expect(

@@ -1,5 +1,4 @@
 import { ArrowUpRight, MessageSquare, ListChecks } from "lucide-react";
-import { randomUUID } from "node:crypto";
 import { ContactForm } from "@/components/forms/contact-form";
 import { notFound } from "next/navigation";
 import { isLocale } from "@/lib/content";
@@ -53,7 +52,7 @@ export default async function ContactPage({
         </span>
         <h2 className="mt-6 text-2xl font-semibold">{t.cardTitle}</h2>
         <p className="mt-4 text-sm leading-8 text-[#586779]">{t.cardText}</p>
-        <ContactForm locale={locale} copy={t.form} requestId={randomUUID()} />
+        <ContactForm locale={locale} copy={t.form} />
         <div className="hairline mt-8 border-t pt-7">
           <p className="text-sm text-[#586779]">{t.workPrompt}</p>
           <Link href={`/${locale}/work`} className="text-link mt-4">

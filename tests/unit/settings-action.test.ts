@@ -5,12 +5,16 @@ const mock = vi.hoisted(() => ({
   guard: vi.fn(),
   client: vi.fn(),
   revalidate: vi.fn(),
+  updateTag: vi.fn(),
 }));
 vi.mock("@/lib/auth/admin", () => ({ requireAdmin: mock.guard }));
 vi.mock("@/lib/supabase/auth-server", () => ({
   createAuthClient: mock.client,
 }));
-vi.mock("next/cache", () => ({ revalidatePath: mock.revalidate }));
+vi.mock("next/cache", () => ({
+  revalidatePath: mock.revalidate,
+  updateTag: mock.updateTag,
+}));
 import { saveSettings } from "../../src/app/admin/(protected)/settings/actions";
 
 const input = {
@@ -38,12 +42,10 @@ describe("settings save action", () => {
       update: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
       select: vi.fn().mockReturnThis(),
-      maybeSingle: vi
-        .fn()
-        .mockResolvedValue({
-          data: { updated_at: "2026-10-24T00:00:00Z" },
-          error: null,
-        }),
+      maybeSingle: vi.fn().mockResolvedValue({
+        data: { updated_at: "2026-10-24T00:00:00Z" },
+        error: null,
+      }),
     };
     mock.client.mockResolvedValue({ from: vi.fn().mockReturnValue(query) });
     expect((await saveSettings(input)).ok).toBe(true);
@@ -52,6 +54,7 @@ describe("settings save action", () => {
     expect(query.eq).toHaveBeenCalledWith("locale", "ar");
     expect(query.update).toHaveBeenCalledWith({ value: input.value });
     expect(mock.revalidate).toHaveBeenCalledWith("/ar", "layout");
+    expect(mock.updateTag).toHaveBeenCalledWith("public-content");
   });
   it("reports conflicts and database failures without claiming success", async () => {
     const query = {

@@ -13,15 +13,22 @@ import {
   deleteMessage,
   setMessageRead,
 } from "@/app/admin/(protected)/messages/actions";
+import { usePagedData } from "./use-paged-data";
+import {
+  loadMessagePage,
+  loadMessage,
+} from "@/app/admin/(protected)/messages/read-actions";
+import {
+  ADMIN_PAGE_SIZE,
+  type MessageQuery,
+  type MessagePage,
+  type MessageSummary,
+} from "@/lib/admin/pagination";
 import type { InboxMessage } from "@/lib/contact";
-export function MessageInbox({
-  initialMessages,
-}: {
-  initialMessages: InboxMessage[];
-}) {
-  const [messages, setMessages] = useState(initialMessages);
+export function MessageInbox({ initialPage }: { initialPage: MessagePage }) {
+  const [selected, setSelected] = useState<InboxMessage | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [filter, setFilter] = useState("all");
+  const [filter, setFilter] = useState<MessageQuery["filter"]>("all");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(
@@ -34,17 +41,16 @@ export function MessageInbox({
     if (deleting) dialog.current?.showModal();
     else dialog.current?.close();
   }, [deleting]);
-  const selected = messages.find((m) => m.id === selectedId);
-  const unread = messages.filter((m) => !m.read_at).length;
-  const filtered = messages.filter(
-    (m) =>
-      (filter === "all" || (filter === "unread" ? !m.read_at : !!m.read_at)) &&
-      [m.name, m.email, m.message].some((v) =>
-        v.toLowerCase().includes(search.trim().toLowerCase()),
-      ),
+  const { data, loading, error, reload } = usePagedData(
+    { page, search, filter },
+    initialPage,
+    loadMessagePage,
   );
-  const pages = Math.max(1, Math.ceil(filtered.length / 10));
-  const current = Math.min(page, pages);
+  const messages = data.items;
+  const filtered = messages;
+  const unread = data.counts.unread;
+  const pages = Math.max(1, Math.ceil(data.total / ADMIN_PAGE_SIZE));
+  const current = page;
   async function mark(message: InboxMessage, read: boolean) {
     try {
       const result = await setMessageRead({
@@ -56,19 +62,47 @@ export function MessageInbox({
         setNotice({ ok: false, text: result.message });
         return;
       }
-      setMessages((items) =>
-        items.map((m) =>
-          m.id === message.id ? { ...m, read_at: result.readAt ?? null } : m,
-        ),
+      setSelected((old) =>
+        old?.id === message.id
+          ? { ...old, read_at: result.readAt ?? null }
+          : old,
       );
+      const unreadDelta = read
+        ? message.read_at
+          ? 0
+          : -1
+        : message.read_at
+          ? 1
+          : 0;
+      if (unreadDelta)
+        window.dispatchEvent(
+          new CustomEvent("admin:unread-messages", {
+            detail: unreadDelta,
+          }),
+        );
+      if (filter !== "all" && messages.length === 1 && page > 1)
+        setPage(page - 1);
+      reload();
     } catch {
       setNotice({ ok: false, text: "تعذر تحديث الرسالة. حاول مجددًا." });
     }
   }
-  function open(message: InboxMessage) {
+  function open(message: MessageSummary) {
     setSelectedId(message.id);
     setNotice(null);
-    if (!message.read_at) startTransition(() => mark(message, true));
+    startTransition(async () => {
+      try {
+        const result = await loadMessage(message.id);
+        if (!result.ok) {
+          setNotice({ ok: false, text: result.error });
+          return;
+        }
+        setSelected(result.message);
+        if (!result.message.read_at) await mark(result.message, true);
+      } catch {
+        setNotice({ ok: false, text: "تعذر تحميل الرسالة." });
+      }
+    });
   }
   function date(value: string) {
     return new Date(value).toLocaleString("ar-EG", {
@@ -84,16 +118,16 @@ export function MessageInbox({
           aria-label="تصفية الرسائل"
         >
           {[
-            ["all", "كل الرسائل", messages.length],
+            ["all", "كل الرسائل", data.counts.all],
             ["unread", "غير مقروءة", unread],
-            ["read", "مقروءة", messages.length - unread],
+            ["read", "مقروءة", data.counts.read],
           ].map(([key, label, count]) => (
             <button
               key={key}
               type="button"
               aria-pressed={filter === key}
               onClick={() => {
-                setFilter(String(key));
+                setFilter(key as MessageQuery["filter"]);
                 setPage(1);
               }}
             >
@@ -104,7 +138,7 @@ export function MessageInbox({
         <button
           className="settings-reset inbox-refresh"
           disabled={pending}
-          onClick={() => window.location.reload()}
+          onClick={reload}
         >
           <RefreshCw size={16} /> تحديث الوارد
         </button>
@@ -125,6 +159,12 @@ export function MessageInbox({
           placeholder="ابحث بالاسم أو البريد أو نص الرسالة…"
         />
       </div>
+      {loading && <p role="status">جارٍ تحميل الرسائل…</p>}
+      {error && (
+        <p role="alert" className="admin-error">
+          {error}
+        </p>
+      )}
       {notice && (
         <p
           role={notice.ok ? "status" : "alert"}
@@ -139,9 +179,9 @@ export function MessageInbox({
       )}
       <div className={"inbox-columns" + (selected ? " has-selection" : "")}>
         <section className="inbox-list" aria-label="الرسائل الواردة">
-          {filtered.slice((current - 1) * 10, current * 10).map((message) => (
+          {filtered.map((message) => (
             <button
-              disabled={pending}
+              disabled={pending || loading}
               key={message.id}
               onClick={() => open(message)}
               className={
@@ -160,7 +200,7 @@ export function MessageInbox({
               <span className="inbox-email" dir="ltr">
                 {message.email}
               </span>
-              <span className="inbox-snippet">{message.message}</span>
+              <span className="inbox-snippet">{message.snippet}</span>
               <time dateTime={message.created_at}>
                 {date(message.created_at)}
               </time>
@@ -170,10 +210,10 @@ export function MessageInbox({
             <div className="admin-panel content-empty">
               <Mail size={32} />
               <h2>
-                {messages.length ? "لا توجد نتائج مطابقة" : "لا توجد رسائل بعد"}
+                {data.counts.all ? "لا توجد نتائج مطابقة" : "لا توجد رسائل بعد"}
               </h2>
               <p className="admin-muted">
-                {messages.length
+                {data.counts.all
                   ? "جرّب تغيير البحث أو التصفية."
                   : "ستظهر رسائل نموذج التواصل هنا."}
               </p>
@@ -181,17 +221,17 @@ export function MessageInbox({
           )}
           <div className="content-pagination">
             <span>
-              {filtered.length} رسالة · {current} / {pages}
+              {data.total} رسالة · {current} / {pages}
             </span>
             <div>
               <button
-                disabled={current === 1}
+                disabled={loading || current === 1}
                 onClick={() => setPage(current - 1)}
               >
                 السابق
               </button>
               <button
-                disabled={current === pages}
+                disabled={loading || current >= pages}
                 onClick={() => setPage(current + 1)}
               >
                 التالي
@@ -209,7 +249,10 @@ export function MessageInbox({
                 type="button"
                 className="settings-reset inbox-mobile-back"
                 disabled={pending}
-                onClick={() => setSelectedId(null)}
+                onClick={() => {
+                  setSelectedId(null);
+                  setSelected(null);
+                }}
               >
                 <ArrowRight size={16} /> العودة للرسائل
               </button>
@@ -314,10 +357,16 @@ export function MessageInbox({
                     expectedReadAt: deleting.read_at,
                   });
                   if (result.ok) {
-                    setMessages((items) =>
-                      items.filter((m) => m.id !== deleting.id),
-                    );
+                    if (!deleting.read_at)
+                      window.dispatchEvent(
+                        new CustomEvent("admin:unread-messages", {
+                          detail: -1,
+                        }),
+                      );
+                    if (messages.length === 1 && page > 1) setPage(page - 1);
+                    reload();
                     setSelectedId(null);
+                    setSelected(null);
                     setNotice({ ok: true, text: "تم حذف الرسالة نهائيًا." });
                   } else setNotice({ ok: false, text: result.message });
                 } catch {

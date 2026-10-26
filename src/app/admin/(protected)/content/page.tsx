@@ -9,7 +9,7 @@ export default async function ContentPage() {
         title="إدارة المحتوى"
         description="أضف أعمالك وشارك أفكارك، وتحكم في المسودات والنشر والترجمات."
       />
-      <ContentManager initialEntries={entries} />
+      <ContentManager initialPage={entries} />
     </>
   );
 }

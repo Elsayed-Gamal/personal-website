@@ -5,12 +5,16 @@ const mock = vi.hoisted(() => ({
   client: vi.fn(),
   rpc: vi.fn(),
   revalidate: vi.fn(),
+  updateTag: vi.fn(),
 }));
 vi.mock("@/lib/auth/admin", () => ({ requireAdmin: mock.guard }));
 vi.mock("@/lib/supabase/auth-server", () => ({
   createAuthClient: mock.client,
 }));
-vi.mock("next/cache", () => ({ revalidatePath: mock.revalidate }));
+vi.mock("next/cache", () => ({
+  revalidatePath: mock.revalidate,
+  updateTag: mock.updateTag,
+}));
 import {
   saveContent,
   deleteContent,
@@ -41,6 +45,7 @@ describe("content actions", () => {
       }),
     });
     expect(mock.revalidate).toHaveBeenCalledWith("/ar", "layout");
+    expect(mock.updateTag).toHaveBeenCalledWith("public-content");
     expect(mock.revalidate).toHaveBeenCalledWith("/en", "layout");
     expect(mock.revalidate).toHaveBeenCalledWith("/admin/content");
     expect(mock.revalidate).toHaveBeenCalledWith("/admin/dashboard");

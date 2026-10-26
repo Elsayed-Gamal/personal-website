@@ -1,3 +1,4 @@
+import { ListPagination, listingPage } from "@/components/ui/list-pagination";
 import { notFound } from "next/navigation";
 import { ProjectCard } from "@/components/portfolio/project-card";
 import { isLocale } from "@/lib/content";
@@ -13,11 +14,13 @@ export async function generateMetadata({
 
 export default async function WorkPage({
   params,
+  searchParams,
 }: PageProps<"/[locale]/work">) {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
+  const page = listingPage((await searchParams).page);
   const [projects, copy] = await Promise.all([
-    getProjects(),
+    getProjects(page),
     getSiteContent("work", locale),
   ]);
   return (
@@ -32,10 +35,16 @@ export default async function WorkPage({
         )}
       </header>
       <div className="work-grid">
-        {projects.map((project) => (
+        {projects.items.map((project) => (
           <ProjectCard key={project.slug} project={project} locale={locale} />
         ))}
       </div>
+      <ListPagination
+        page={page}
+        hasMore={projects.hasMore}
+        base={`/${locale}/work`}
+        locale={locale}
+      />
     </section>
   );
 }

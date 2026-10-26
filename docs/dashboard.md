@@ -22,7 +22,7 @@ Only **Personal website** (`cdoaudugbjrkhyhivaaa`) was modified. Migration `dash
 
 The public ingestion API is unauthenticated. Determined callers can still fabricate legitimate-looking events/countries, consume the shared cap, or bypass client bot exclusions; these statistics are indicative, not fraud-proof or suitable for billing. Do not claim unique-person counts or precise geography.
 
-Receipts live in non-exposed `private.analytics_receipts`, with RLS and no client table privileges. Receipts older than two days and daily aggregates older than 400 days are purged on the next valid recording call. No scheduled purge job is installed.
+Receipts live in non-exposed `private.analytics_receipts`, with RLS and no client table privileges. The `personal-website-analytics-cleanup` cron job purges receipts older than two days, daily aggregates older than 400 days, and old private daily counters at 03:17 UTC. Ingestion locks a private counter row for the current day and increments it atomically, retaining the existing per-minute/day caps and idempotency. Cleanup is no longer performed on each recording call.
 
 ## Verification
 

@@ -1,3 +1,5 @@
+import { Suspense } from "react";
+import type { Locale } from "@/lib/content";
 import { ArrowUpRight, Globe2, Layers, ShoppingBag } from "lucide-react";
 import { notFound } from "next/navigation";
 import { Hero } from "@/components/home/hero";
@@ -21,11 +23,7 @@ const serviceIcons = {
 export default async function HomePage({ params }: PageProps<"/[locale]">) {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
-  const [articles, projects, copy] = await Promise.all([
-    getArticles(),
-    getProjects(),
-    getHomeContent(locale),
-  ]);
+  const copy = await getHomeContent(locale);
   return (
     <>
       <Hero locale={locale} copy={copy.hero} />
@@ -74,9 +72,9 @@ export default async function HomePage({ params }: PageProps<"/[locale]">) {
           </Link>
         </div>
         <div className="work-grid">
-          {projects.slice(0, 2).map((project) => (
-            <ProjectCard key={project.slug} project={project} locale={locale} />
-          ))}
+          <Suspense fallback={<CardsLoading locale={locale} />}>
+            <FeaturedProjects locale={locale} />
+          </Suspense>
         </div>
       </section>
       <section className="process-section section-space">
@@ -109,9 +107,9 @@ export default async function HomePage({ params }: PageProps<"/[locale]">) {
           </Link>
         </div>
         <div className="journal-grid">
-          {articles.map((article) => (
-            <ArticleCard key={article.id} article={article} locale={locale} />
-          ))}
+          <Suspense fallback={<CardsLoading locale={locale} />}>
+            <LatestArticles locale={locale} />
+          </Suspense>
         </div>
       </section>
       <section className="container-shell cta-wrap">
@@ -128,5 +126,25 @@ export default async function HomePage({ params }: PageProps<"/[locale]">) {
         </div>
       </section>
     </>
+  );
+}
+
+async function FeaturedProjects({ locale }: { locale: Locale }) {
+  const { items } = await getProjects(1, 2);
+  return items.map((project) => (
+    <ProjectCard key={project.slug} project={project} locale={locale} />
+  ));
+}
+async function LatestArticles({ locale }: { locale: Locale }) {
+  const { items } = await getArticles(1, 3);
+  return items.map((article) => (
+    <ArticleCard key={article.id} article={article} locale={locale} />
+  ));
+}
+function CardsLoading({ locale }: { locale: Locale }) {
+  return (
+    <div role="status" style={{ minHeight: 320 }}>
+      {locale === "ar" ? "جارٍ تحميل المحتوى…" : "Loading content…"}
+    </div>
   );
 }

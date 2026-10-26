@@ -1,0 +1,96 @@
+{
+  "measuredAt": "2026-10-26T13:21:40.116Z",
+  "scope": "Chunks referenced by each client entry, not total page JS. Excludes shared runtime and deferred dynamic imports; gzip is measured locally per file.",
+  "entries": [
+    {
+      "name": "public-layout-tracker",
+      "before": {
+        "files": [
+          {
+            "file": "static/chunks/409-8a0c887a5f4e7943.js",
+            "rawBytes": 7644,
+            "gzipBytes": 3267
+          },
+          {
+            "file": "static/chunks/71-ad41656e079b02c2.js",
+            "rawBytes": 95971,
+            "gzipBytes": 28100
+          },
+          {
+            "file": "static/chunks/app/%5Blocale%5D/layout-65823382db4f8910.js",
+            "rawBytes": 7106,
+            "gzipBytes": 2757
+          }
+        ],
+        "rawBytes": 110721,
+        "gzipBytes": 34124
+      },
+      "after": {
+        "files": [
+          {
+            "file": "static/chunks/500-fc3b64d9ff4a32a7.js",
+            "rawBytes": 7642,
+            "gzipBytes": 3246
+          },
+          {
+            "file": "static/chunks/app/%5Blocale%5D/layout-4e3f63c09cdf1ec2.js",
+            "rawBytes": 9465,
+            "gzipBytes": 3726
+          }
+        ],
+        "rawBytes": 17107,
+        "gzipBytes": 6972
+      }
+    },
+    {
+      "name": "admin-content-list",
+      "before": {
+        "files": [
+          {
+            "file": "static/chunks/deb9780e-991476372208ac41.js",
+            "rawBytes": 67445,
+            "gzipBytes": 14299
+          },
+          {
+            "file": "static/chunks/102-31ae0c45cb55b293.js",
+            "rawBytes": 14373,
+            "gzipBytes": 5500
+          },
+          {
+            "file": "static/chunks/71-ad41656e079b02c2.js",
+            "rawBytes": 95971,
+            "gzipBytes": 28100
+          },
+          {
+            "file": "static/chunks/985-18e49ac31bc11918.js",
+            "rawBytes": 358424,
+            "gzipBytes": 104370
+          },
+          {
+            "file": "static/chunks/app/admin/(protected)/content/page-0449bdecaf6e5547.js",
+            "rawBytes": 43614,
+            "gzipBytes": 13312
+          }
+        ],
+        "rawBytes": 579827,
+        "gzipBytes": 165581
+      },
+      "after": {
+        "files": [
+          {
+            "file": "static/chunks/225-6d7390632f8e402c.js",
+            "rawBytes": 96729,
+            "gzipBytes": 28462
+          },
+          {
+            "file": "static/chunks/app/admin/(protected)/content/page-b802692f0bd5a68b.js",
+            "rawBytes": 20105,
+            "gzipBytes": 7267
+          }
+        ],
+        "rawBytes": 116834,
+        "gzipBytes": 35729
+      }
+    }
+  ]
+}

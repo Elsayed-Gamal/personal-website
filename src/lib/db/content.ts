@@ -1,5 +1,6 @@
 import "server-only";
 import { cache } from "react";
+import { unstable_cache } from "next/cache";
 import { z } from "zod";
 import {
   articleSchema,
@@ -97,16 +98,22 @@ export const getSiteUI = cache(async (locale: Locale) => {
   return getSiteContent("ui", locale);
 });
 
-const fetchSiteContent = cache(async (key: SiteContentKey, locale: Locale) => {
-  const { data, error } = await createContentClient()
-    .from("site_content")
-    .select("value")
-    .eq("key", key)
-    .eq("locale", locale)
-    .single();
-  checkError(error, `${key} content`);
-  return data?.value;
-});
+const fetchSiteContent = cache(
+  unstable_cache(
+    async (key: SiteContentKey, locale: Locale) => {
+      const { data, error } = await createContentClient()
+        .from("site_content")
+        .select("value")
+        .eq("key", key)
+        .eq("locale", locale)
+        .single();
+      checkError(error, `${key} content`);
+      return data?.value;
+    },
+    ["site-copy-v2"],
+    { revalidate: 300, tags: ["public-content"] },
+  ),
+);
 
 export async function getSiteContent<K extends SiteContentKey>(
   key: K,
@@ -121,59 +128,127 @@ export const getHomeContent = cache(async (locale: Locale) =>
   getSiteContent("home", locale),
 );
 
-export const getProjects = cache(async () => {
-  const { data, error } = await createContentClient()
-    .from("projects")
-    .select("*, project_translations(*)")
-    .eq("published", true)
-    .order("sort_order")
-    .order("slug");
-  checkError(error, "projects");
-  return (data ?? []).map(mapProject);
-});
+const coverColumns = "cover_image_path,cover_image_url,cover_image_alt";
+export const PUBLIC_PAGE_SIZE = 12;
 
-export const getProjectBySlug = cache(async (slug: string) => {
-  const { data, error } = await createContentClient()
-    .from("projects")
-    .select("*, project_translations(*)")
-    .eq("published", true)
-    .eq("slug", slug)
-    .maybeSingle();
-  checkError(error, "project detail");
-  return data ? mapProject(data) : null;
-});
+// Bounded summaries: bodies are only selected on detail routes.
+export const getProjects = cache(
+  unstable_cache(
+    async (page = 1, size = PUBLIC_PAGE_SIZE) => {
+      const { data, error } = await createContentClient()
+        .from("projects")
+        .select(
+          `slug,sort_order,year,color,stack,${coverColumns},project_translations(locale,title,summary,category)`,
+        )
+        .eq("published", true)
+        .order("sort_order")
+        .order("slug")
+        .range((page - 1) * size, page * size);
+      checkError(error, "projects");
+      return {
+        items: (data ?? []).slice(0, size).map((row) => {
+          const mapped = mapProject({
+            ...row,
+            project_translations: row.project_translations.map((t: object) => ({
+              ...t,
+              body: "",
+            })),
+          });
+          return {
+            ...mapped,
+            content: {
+              ar: {
+                title: mapped.content.ar.title,
+                summary: mapped.content.ar.summary,
+              },
+              en: {
+                title: mapped.content.en.title,
+                summary: mapped.content.en.summary,
+              },
+            },
+          };
+        }),
+        hasMore: (data?.length ?? 0) > size,
+      };
+    },
+    ["project-summaries-v2"],
+    { revalidate: 300, tags: ["public-content"] },
+  ),
+);
 
-export const getArticles = cache(async () => {
-  const { data, error } = await createContentClient()
-    .from("articles")
-    .select("*, article_translations(*)")
-    .eq("published", true)
-    .order("date", { ascending: false })
-    .order("id");
-  checkError(error, "articles");
-  return (data ?? [])
-    .filter((row) =>
-      row.article_translations.some((t: { published: boolean }) => t.published),
-    )
-    .map(mapArticle);
-});
+export const getProjectBySlug = cache(
+  unstable_cache(
+    async (slug: string) => {
+      const { data, error } = await createContentClient()
+        .from("projects")
+        .select("*, project_translations(*)")
+        .eq("published", true)
+        .eq("slug", slug)
+        .maybeSingle();
+      checkError(error, "project detail");
+      return data ? mapProject(data) : null;
+    },
+    ["project-detail-v2"],
+    { revalidate: 300, tags: ["public-content"] },
+  ),
+);
 
-export const findArticleBySlug = cache(async (slug: string) => {
-  const client = createContentClient();
-  const { data: translation, error: lookupError } = await client
-    .from("article_translations")
-    .select("article_id")
-    .eq("slug", slug)
-    .eq("published", true)
-    .maybeSingle();
-  checkError(lookupError, "article slug");
-  if (!translation) return null;
-  const { data, error } = await client
-    .from("articles")
-    .select("*, article_translations(*)")
-    .eq("id", translation.article_id)
-    .eq("published", true)
-    .maybeSingle();
-  checkError(error, "article detail");
-  return data ? mapArticle(data) : null;
-});
+export const getArticles = cache(
+  unstable_cache(
+    async (page = 1, size = PUBLIC_PAGE_SIZE) => {
+      const { data, error } = await createContentClient()
+        .from("articles")
+        .select(
+          `id,date,reading_time,category,${coverColumns},article_translations!inner(locale,slug,title,excerpt,published)`,
+        )
+        .eq("published", true)
+        .eq("article_translations.published", true)
+        .order("date", { ascending: false })
+        .order("id")
+        .range((page - 1) * size, page * size);
+      checkError(error, "articles");
+      return {
+        items: (data ?? []).slice(0, size).map((row) => {
+          const mapped = mapArticle({
+            ...row,
+            article_translations: row.article_translations.map((t: object) => ({
+              ...t,
+              body: "",
+            })),
+          });
+          return {
+            ...mapped,
+            translations: Object.fromEntries(
+              Object.entries(mapped.translations).map(([locale, t]) => [
+                locale,
+                { slug: t.slug, title: t.title, excerpt: t.excerpt },
+              ]),
+            ),
+          };
+        }),
+        hasMore: (data?.length ?? 0) > size,
+      };
+    },
+    ["article-summaries-v2"],
+    { revalidate: 300, tags: ["public-content"] },
+  ),
+);
+
+export const findArticleBySlug = cache(
+  unstable_cache(
+    async (slug: string) => {
+      const { data, error } = await createContentClient()
+        .from("articles")
+        .select(
+          "*,article_translations(*),slug_match:article_translations!inner(slug)",
+        )
+        .eq("published", true)
+        .eq("slug_match.slug", slug)
+        .maybeSingle();
+      checkError(error, "article detail");
+      return data ? mapArticle(data) : null;
+    },
+    ["article-detail-v2"],
+    { revalidate: 300, tags: ["public-content"] },
+  ),
+);

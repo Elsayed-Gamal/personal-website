@@ -26,9 +26,13 @@ import {
   Strikethrough,
   Table,
 } from "lucide-react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import rehypeSanitize from "rehype-sanitize";
+import dynamic from "next/dynamic";
+import { equalDraft } from "@/lib/admin/draft";
+const MarkdownContent = dynamic(
+  () =>
+    import("@/components/ui/markdown-content").then((m) => m.MarkdownContent),
+  { loading: () => <p role="status">جارٍ تحميل المعاينة…</p> },
+);
 import { saveContent } from "@/app/admin/(protected)/content/actions";
 import type {
   ArticleEdit,
@@ -38,7 +42,9 @@ import type {
 } from "@/lib/admin/content";
 import { useUnsavedChanges } from "./use-unsaved-changes";
 import { ContentImageField } from "./content-image-field";
-import { MediaLibrary } from "./media-library";
+const MediaLibrary = dynamic(() =>
+  import("./media-library").then((m) => m.MediaLibrary),
+);
 import { uploadContentImage } from "@/lib/admin/upload-image";
 import { contentImageUrl, IMAGE_TYPES } from "@/lib/content-images";
 
@@ -87,7 +93,11 @@ const markdownTools: {
   { action: "task-list", label: "قائمة مهام", icon: ListTodo },
   { action: "link", label: "رابط", icon: Link },
   { action: "image", label: "صورة", icon: ImagePlus },
-  { action: "image-library", label: "اختيار صورة من المكتبة أو رفع صورة", icon: Images },
+  {
+    action: "image-library",
+    label: "اختيار صورة من المكتبة أو رفع صورة",
+    icon: Images,
+  },
   { action: "quote", label: "اقتباس", icon: Quote },
   { action: "code", label: "كود متعدد الأسطر", icon: Code },
   { action: "table", label: "جدول", icon: Table },
@@ -304,8 +314,7 @@ function MarkdownField({
         placeholder = "كود";
         break;
       case "table":
-        placeholder =
-          "| العمود 1 | العمود 2 |\n| --- | --- |\n| قيمة | قيمة |";
+        placeholder = "| العمود 1 | العمود 2 |\n| --- | --- |\n| قيمة | قيمة |";
         selectPlaceholder = true;
         break;
       case "footnote": {
@@ -320,7 +329,10 @@ function MarkdownField({
         footnoteInsertion = {
           text: `${selected}${reference}${definitionPrefix}${placeholder}`,
           selectionStart:
-            start + selected.length + reference.length + definitionPrefix.length,
+            start +
+            selected.length +
+            reference.length +
+            definitionPrefix.length,
         };
         break;
       }
@@ -355,10 +367,14 @@ function MarkdownField({
         ? { start: contentStart, end: contentStart + replacement.length }
         : action === "horizontal-rule"
           ? { start: start + inserted.length, end: start + inserted.length }
-        : {
-            start: selected ? contentStart : contentStart + replacement.length,
-            end: selected ? contentStart + replacement.length : contentStart + replacement.length,
-          };
+          : {
+              start: selected
+                ? contentStart
+                : contentStart + replacement.length,
+              end: selected
+                ? contentStart + replacement.length
+                : contentStart + replacement.length,
+            };
     }
 
     const nextValue = value.slice(0, start) + inserted + value.slice(end);
@@ -374,7 +390,11 @@ function MarkdownField({
   return (
     <div className="settings-field markdown-field">
       <label htmlFor={id}>{label}</label>
-      <div className="markdown-toolbar" role="group" aria-label="أدوات Markdown">
+      <div
+        className="markdown-toolbar"
+        role="group"
+        aria-label="أدوات Markdown"
+      >
         {markdownTools.map(({ action, label: toolLabel, icon: Icon }) => (
           <button
             key={action}
@@ -450,8 +470,7 @@ function MarkdownField({
               onSelect={(image) => {
                 const url = contentImageUrl(image.path);
                 if (url) insertImage(url);
-                else
-                  setImagePickerError("تعذر إنشاء رابط للصورة المختارة.");
+                else setImagePickerError("تعذر إنشاء رابط للصورة المختارة.");
               }}
             />
           </section>
@@ -575,7 +594,7 @@ export function ContentEditor({
   const [pending, startTransition] = useTransition();
   const [uploading, setUploading] = useState(false);
   const busy = pending || uploading;
-  const dirty = JSON.stringify(draft) !== JSON.stringify(original);
+  const dirty = !equalDraft(draft, original);
   useUnsavedChanges(dirty || uploading);
   const idx = draft.translations.findIndex((t) => t.locale === language);
   const translation = draft.translations[idx];
@@ -907,12 +926,7 @@ export function ContentEditor({
                             .excerpt
                         }
                       </p>
-                      <ReactMarkdown
-                        remarkPlugins={[remarkGfm]}
-                        rehypePlugins={[rehypeSanitize]}
-                      >
-                        {translation.body}
-                      </ReactMarkdown>
+                      <MarkdownContent>{translation.body}</MarkdownContent>
                     </>
                   ) : (
                     <>
@@ -922,12 +936,7 @@ export function ContentEditor({
                             .summary
                         }
                       </p>
-                      <ReactMarkdown
-                        remarkPlugins={[remarkGfm]}
-                        rehypePlugins={[rehypeSanitize]}
-                      >
-                        {translation.body}
-                      </ReactMarkdown>
+                      <MarkdownContent>{translation.body}</MarkdownContent>
                     </>
                   )}
                 </div>

@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getArticleLocale, isLocale } from "@/lib/content";
-import { findArticleBySlug } from "@/lib/db/content";
 import { adminProxy } from "@/lib/supabase/admin-proxy";
 
 const locales = ["ar", "en"] as const;
@@ -30,46 +28,12 @@ export async function proxy(request: NextRequest) {
   }
 
   const locale = pathname.split("/")[1];
-  const segments = pathname.split("/");
-  if (isLocale(locale) && segments[2] === "blog" && segments.length === 4) {
-    let slug: string;
-    try {
-      slug = decodeURIComponent(segments[3]);
-    } catch {
-      return NextResponse.next();
-    }
-    let article;
-    try {
-      article = await findArticleBySlug(slug);
-    } catch {
-      return new NextResponse(
-        "Content is temporarily unavailable. Please try again later.",
-        {
-          status: 503,
-          headers: { "Retry-After": "30", "Cache-Control": "no-store" },
-        },
-      );
-    }
-    if (article) {
-      const articleLocale = getArticleLocale(article, locale);
-      const translation = article.translations[articleLocale]!;
-      if (articleLocale !== locale || translation.slug !== slug) {
-        const url = request.nextUrl.clone();
-        url.pathname = `/${articleLocale}/blog/${encodeURIComponent(translation.slug)}`;
-        const response = NextResponse.redirect(url);
-        response.cookies.set("site-locale", articleLocale, {
-          maxAge: 60 * 60 * 24 * 365,
-          sameSite: "lax",
-        });
-        return response;
-      }
-    }
-  }
   const response = NextResponse.next();
-  response.cookies.set("site-locale", locale, {
-    maxAge: 60 * 60 * 24 * 365,
-    sameSite: "lax",
-  });
+  if (request.cookies.get("site-locale")?.value !== locale)
+    response.cookies.set("site-locale", locale, {
+      maxAge: 60 * 60 * 24 * 365,
+      sameSite: "lax",
+    });
   return response;
 }
 

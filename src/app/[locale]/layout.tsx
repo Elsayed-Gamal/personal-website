@@ -29,7 +29,10 @@ export async function generateMetadata({
   };
 }
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
+export function generateStaticParams() {
+  return [{ locale: "ar" }, { locale: "en" }];
+}
 
 export default async function LocaleLayout({
   children,

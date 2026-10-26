@@ -85,9 +85,9 @@ it("retains the existing cover on failed replacement and allows unlinking it", a
     target: { files: [new File(["x"], "x.png", { type: "image/png" })] },
   });
   await screen.findByRole("alert");
-  expect(screen.getByRole("img").getAttribute("src")).toContain(
-    entry.cover_image_path,
-  );
+  expect(
+    decodeURIComponent(screen.getByRole("img").getAttribute("src") ?? ""),
+  ).toContain(entry.cover_image_path);
   expect(mock.save).not.toHaveBeenCalled();
   fireEvent.click(screen.getByRole("button", { name: "إزالة الصورة" }));
   expect(screen.queryByRole("img")).toBeNull();
@@ -113,9 +113,9 @@ it("applies an external URL and clears an existing library cover", async () => {
     target: { value: "https://images.example.com/a.jpg" },
   });
   fireEvent.click(screen.getByRole("button", { name: "استخدام الرابط" }));
-  expect(screen.getByRole("img").getAttribute("src")).toBe(
-    "https://images.example.com/a.jpg",
-  );
+  expect(
+    decodeURIComponent(screen.getByRole("img").getAttribute("src") ?? ""),
+  ).toBe("https://images.example.com/a.jpg");
   fireEvent.click(screen.getByRole("button", { name: "حفظ ونشر" }));
   await waitFor(() =>
     expect(mock.save).toHaveBeenCalledWith(

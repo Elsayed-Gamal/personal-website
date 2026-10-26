@@ -1,13 +1,15 @@
 import { redirect, notFound } from "next/navigation";
-import ReactMarkdown from "react-markdown";
-import rehypeSanitize from "rehype-sanitize";
-import remarkGfm from "remark-gfm";
+import { MarkdownContent } from "@/components/ui/markdown-content";
 import { getArticleLocale, isLocale } from "@/lib/content";
 import { findArticleBySlug, getSiteContent, getSiteUI } from "@/lib/db/content";
 import { buildSeoMetadata } from "@/lib/seo";
 import { SiteLink as Link } from "@/components/layout/site-link";
 import { ContentCover } from "@/components/ui/content-cover";
 import { contentImageUrl } from "@/lib/content-images";
+
+export function generateStaticParams() {
+  return [];
+}
 
 export async function generateMetadata({
   params,
@@ -97,12 +99,7 @@ export default async function ArticlePage({
           />
         )}
         <div className="article-body py-10">
-          <ReactMarkdown
-            remarkPlugins={[remarkGfm]}
-            rehypePlugins={[rehypeSanitize]}
-          >
-            {translation.body}
-          </ReactMarkdown>
+          <MarkdownContent>{translation.body}</MarkdownContent>
         </div>
       </div>
     </article>

@@ -1,14 +1,16 @@
 import { ArrowUpRight } from "lucide-react";
 import { notFound } from "next/navigation";
-import ReactMarkdown from "react-markdown";
-import rehypeSanitize from "rehype-sanitize";
-import remarkGfm from "remark-gfm";
+import { MarkdownContent } from "@/components/ui/markdown-content";
 import { isLocale } from "@/lib/content";
 import { getProjectBySlug, getSiteContent, getSiteUI } from "@/lib/db/content";
 import { buildSeoMetadata } from "@/lib/seo";
 import { SiteLink as Link } from "@/components/layout/site-link";
 import { ContentCover } from "@/components/ui/content-cover";
 import { contentImageUrl } from "@/lib/content-images";
+
+export function generateStaticParams() {
+  return [];
+}
 
 export async function generateMetadata({
   params,
@@ -122,12 +124,7 @@ export default async function ProjectPage({
           <p className="eyebrow">{labels.overview}</p>
         </div>
         <div className="article-body">
-          <ReactMarkdown
-            remarkPlugins={[remarkGfm]}
-            rehypePlugins={[rehypeSanitize]}
-          >
-            {content.body}
-          </ReactMarkdown>
+          <MarkdownContent>{content.body}</MarkdownContent>
         </div>
       </section>
       <section className="hairline border-t py-20 text-center">

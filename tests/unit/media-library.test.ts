@@ -46,6 +46,7 @@ it("protects used images and requires confirmation for permanent deletion", asyn
   fireEvent.click(screen.getByRole("button", { name: `حذف ${image.path}` }));
   await waitFor(() => expect(mock.remove).toHaveBeenCalledWith(image.path));
   await screen.findByText("لا توجد صور مرفوعة هنا بعد.");
+  expect(mock.load).toHaveBeenCalledTimes(1);
   rerender(
     createElement(MediaLibrary, {
       key: "used",

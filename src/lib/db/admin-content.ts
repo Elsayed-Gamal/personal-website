@@ -1,59 +1,34 @@
+import {
+  contentQuerySchema,
+  contentPageSchema,
+  ADMIN_PAGE_SIZE,
+  type ContentQuery,
+  type ContentPage,
+} from "@/lib/admin/pagination";
 import "server-only";
 import { requireAdmin } from "@/lib/auth/admin";
 import { createAuthClient } from "@/lib/supabase/auth-server";
 import {
   contentEntrySchema,
-  contentSummarySchema,
   type ContentEntry,
-  type ContentSummary,
   type ContentKind,
 } from "@/lib/admin/content";
 
-export async function getAdminContent(): Promise<ContentSummary[]> {
+export async function getAdminContent(
+  input: ContentQuery = { page: 1, search: "", kind: "article", status: "all" },
+): Promise<ContentPage> {
   await requireAdmin();
+  const query = contentQuerySchema.parse(input);
   const client = await createAuthClient();
-  async function read(kind: "article" | "project") {
-    const result: ContentSummary[] = [];
-    for (let start = 0; ; start += 100) {
-      const { data, error } =
-        kind === "article"
-          ? await client
-              .from("articles")
-              .select(
-                "id,updated_at,published,date,article_translations(locale,slug,title,published)",
-              )
-              .order("id")
-              .range(start, start + 99)
-          : await client
-              .from("projects")
-              .select(
-                "slug,updated_at,published,year,sort_order,project_translations(locale,title)",
-              )
-              .order("slug")
-              .range(start, start + 99);
-      if (error) throw new Error("تعذر تحميل المحتوى. حاول مجددًا.");
-      for (const row of data ?? [])
-        result.push(
-          contentSummarySchema.parse({
-            ...row,
-            kind,
-            id: "id" in row ? row.id : row.slug,
-            translations: ("article_translations" in row
-              ? row.article_translations
-              : row.project_translations
-            ).sort((a: { locale: string }, b: { locale: string }) =>
-              a.locale.localeCompare(b.locale),
-            ),
-          }),
-        );
-      if (!data || data.length < 100) return result;
-    }
-  }
-  const [articles, projects] = await Promise.all([
-    read("article"),
-    read("project"),
-  ]);
-  return [...articles, ...projects];
+  const { data, error } = await client.rpc("list_admin_content", {
+    p_page: query.page,
+    p_size: ADMIN_PAGE_SIZE,
+    p_kind: query.kind,
+    p_status: query.status,
+    p_search: query.search,
+  });
+  if (error) throw new Error("تعذر تحميل المحتوى. حاول مجددًا.");
+  return contentPageSchema.parse(data);
 }
 
 export async function getAdminContentEntry(

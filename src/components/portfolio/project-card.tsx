@@ -1,6 +1,6 @@
 import { ArrowUpRight } from "lucide-react";
 import { ContentCover } from "@/components/ui/content-cover";
-import type { Locale, Project } from "@/lib/content";
+import type { Locale, ProjectSummary } from "@/lib/content";
 import { getSiteUI } from "@/lib/db/content";
 import { SiteLink as Link } from "@/components/layout/site-link";
 
@@ -8,7 +8,7 @@ export async function ProjectCard({
   project,
   locale,
 }: {
-  project: Project;
+  project: ProjectSummary;
   locale: Locale;
 }) {
   const content = project.content[locale];

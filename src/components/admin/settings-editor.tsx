@@ -1,4 +1,5 @@
 "use client";
+import { equalDraft, replaceAtPath } from "@/lib/admin/draft";
 import { useEffect, useState, useTransition } from "react";
 import { Check, Save, ExternalLink, Plus, Trash2 } from "lucide-react";
 import { saveSettings } from "@/app/admin/(protected)/settings/actions";
@@ -322,7 +323,7 @@ export function SettingsEditor({ records }: { records: SettingsRecord[] }) {
     conflict?: boolean;
   } | null>(null);
   const [pending, startTransition] = useTransition();
-  const dirty = JSON.stringify(draft) !== JSON.stringify(initial.value);
+  const dirty = !equalDraft(draft, initial.value);
   useEffect(() => {
     if (!dirty) return;
     const warn = (e: BeforeUnloadEvent) => {
@@ -366,14 +367,7 @@ export function SettingsEditor({ records }: { records: SettingsRecord[] }) {
     setErrors({});
   }
   function change(path: string[], value: string | string[]) {
-    setDraft((current) => {
-      const next = structuredClone(current);
-      let target = next as unknown as Record<string, unknown>;
-      for (const key of path.slice(0, -1))
-        target = target[key] as Record<string, unknown>;
-      target[path.at(-1)!] = value;
-      return next;
-    });
+    setDraft((current) => replaceAtPath(current, path, value));
     setNotice(null);
     setErrors({});
   }

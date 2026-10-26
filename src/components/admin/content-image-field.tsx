@@ -7,7 +7,10 @@ import {
   coverSourceFromUrl,
   IMAGE_TYPES,
 } from "@/lib/content-images";
-import { MediaLibrary } from "./media-library";
+import dynamic from "next/dynamic";
+const MediaLibrary = dynamic(() =>
+  import("./media-library").then((m) => m.MediaLibrary),
+);
 import { uploadContentImage } from "@/lib/admin/upload-image";
 import type { ContentEntry } from "@/lib/admin/content";
 
@@ -94,7 +97,7 @@ export function ContentImageField({
               }
               fill
               sizes="(max-width: 640px) 90vw, 320px"
-              unoptimized
+              unoptimized={!entry.cover_image_path}
               onError={() =>
                 setError("تعذر عرض الصورة. تأكد أن الرابط مباشر ومتاح للعامة.")
               }

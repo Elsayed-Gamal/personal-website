@@ -4,12 +4,16 @@ import { requireAdmin } from "@/lib/auth/admin";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { AdminLink } from "@/components/admin/admin-link";
 import { logout } from "@/app/admin/actions";
+import { getAdminUnreadMessageCount } from "@/lib/db/admin-messages";
 export default async function ProtectedLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const user = await requireAdmin();
+  const [user, unreadMessageCount] = await Promise.all([
+    requireAdmin(),
+    getAdminUnreadMessageCount(),
+  ]);
   return (
     <div className="admin-shell">
       <a href="#admin-main" className="admin-skip">
@@ -22,7 +26,10 @@ export default async function ProtectedLayout({
             إدارة الموقع<small>مساحتك الخاصة</small>
           </div>
         </AdminLink>
-        <AdminNav />
+        <AdminNav
+          key={unreadMessageCount}
+          unreadMessageCount={unreadMessageCount}
+        />
         <Link className="admin-site-link" href="/ar">
           <ExternalLink size={18} aria-hidden="true" /> عرض الموقع
         </Link>

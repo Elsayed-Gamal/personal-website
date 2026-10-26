@@ -9,26 +9,33 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { deleteContent } from "@/app/admin/(protected)/content/actions";
-import { loadContent } from "@/app/admin/(protected)/content/read-actions";
+import {
+  loadContent,
+  loadContentPage,
+} from "@/app/admin/(protected)/content/read-actions";
 import {
   entryTitle,
   newContentEntry,
-  contentSummarySchema,
   type ContentSummary,
   type ContentEntry,
   type ContentKind,
 } from "@/lib/admin/content";
-import { ContentEditor } from "./content-editor";
+import dynamic from "next/dynamic";
+import { usePagedData } from "./use-paged-data";
+import {
+  ADMIN_PAGE_SIZE,
+  type ContentQuery,
+  type ContentPage,
+} from "@/lib/admin/pagination";
+const ContentEditor = dynamic(
+  () => import("./content-editor").then((m) => m.ContentEditor),
+  { loading: () => <p role="status">جارٍ تحميل المحرر…</p> },
+);
 
-export function ContentManager({
-  initialEntries,
-}: {
-  initialEntries: ContentSummary[];
-}) {
-  const [entries, setEntries] = useState(initialEntries);
+export function ContentManager({ initialPage }: { initialPage: ContentPage }) {
   const [kind, setKind] = useState<ContentKind>("article");
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("all");
+  const [status, setStatus] = useState<ContentQuery["status"]>("all");
   const [page, setPage] = useState(1);
   const [editing, setEditing] = useState<ContentEntry | null>(null);
   const [removing, setRemoving] = useState<ContentSummary | null>(null);
@@ -42,44 +49,25 @@ export function ContentManager({
     if (removing) dialog.current?.showModal();
     else dialog.current?.close();
   }, [removing]);
-  const group = entries.filter((e) => e.kind === kind);
-  const filtered = group
-    .filter(
-      (e) =>
-        (status === "all" ||
-          (status === "published" ? e.published : !e.published)) &&
-        [e.id, ...e.translations.map((t) => t.title)].some((s) =>
-          s.toLowerCase().includes(search.toLowerCase().trim()),
-        ),
-    )
-    .sort((a, b) =>
-      a.kind === "project" && b.kind === "project"
-        ? a.sort_order - b.sort_order
-        : a.kind === "article" && b.kind === "article"
-          ? b.date.localeCompare(a.date)
-          : 0,
-    );
-  const pages = Math.max(1, Math.ceil(filtered.length / 10));
-  const current = Math.min(page, pages);
-  const visible = filtered.slice((current - 1) * 10, current * 10);
+  const { data, loading, error, reload } = usePagedData(
+    { kind, search, status, page },
+    initialPage,
+    loadContentPage,
+  );
+  const pages = Math.max(1, Math.ceil(data.total / ADMIN_PAGE_SIZE));
+  const current = page;
+  const visible = data.items;
   if (editing)
     return (
       <ContentEditor
         key={editing.kind + ":" + editing.id}
         entry={editing}
-        onClose={() => setEditing(null)}
+        onClose={() => {
+          setEditing(null);
+          reload();
+        }}
         onSaved={(saved) => {
-          const summary = contentSummarySchema.parse(saved);
-          setEntries((items) => {
-            const exists = items.some(
-              (e) => e.kind === saved.kind && e.id === saved.id,
-            );
-            return exists
-              ? items.map((e) =>
-                  e.kind === saved.kind && e.id === saved.id ? summary : e,
-                )
-              : [summary, ...items];
-          });
+          reload();
           setEditing(saved);
         }}
       />
@@ -105,9 +93,7 @@ export function ContentManager({
               }}
             >
               {value === "article" ? "المقالات" : "المشاريع"}{" "}
-              <span className="content-count">
-                {entries.filter((e) => e.kind === value).length}
-              </span>
+              <span className="content-count">{data.counts[value]}</span>
             </button>
           ))}
         </div>
@@ -123,8 +109,8 @@ export function ContentManager({
         </button>
       </div>
       <div className="content-summary">
-        <span>{group.filter((e) => e.published).length} منشور</span>
-        <span>{group.filter((e) => !e.published).length} مسودة</span>
+        <span>{data.counts.published} منشور</span>
+        <span>{data.counts.draft} مسودة</span>
       </div>
       <div className="content-filters">
         <div className="content-search">
@@ -148,7 +134,7 @@ export function ContentManager({
           <select
             value={status}
             onChange={(e) => {
-              setStatus(e.target.value);
+              setStatus(e.target.value as ContentQuery["status"]);
               setPage(1);
             }}
           >
@@ -170,6 +156,12 @@ export function ContentManager({
           {message.text}
         </p>
       )}
+      {error && (
+        <p role="alert" className="admin-error">
+          {error}
+        </p>
+      )}
+      {loading && <p role="status">جارٍ تحميل القائمة…</p>}
       {opening && (
         <p role="status" className="admin-muted">
           جارٍ تحميل بيانات المحتوى…
@@ -245,7 +237,7 @@ export function ContentManager({
                       </a>
                     ))}
                 <button
-                  disabled={opening || pending}
+                  disabled={opening || pending || loading}
                   onClick={() => {
                     setMessage(null);
                     startOpening(async () => {
@@ -270,7 +262,7 @@ export function ContentManager({
                 </button>
                 <button
                   className="content-danger"
-                  disabled={opening || pending}
+                  disabled={opening || pending || loading}
                   onClick={() => {
                     setMessage(null);
                     setRemoving(entry);
@@ -287,12 +279,12 @@ export function ContentManager({
         <div className="admin-panel content-empty">
           <FileText size={36} />
           <h2>
-            {group.length
+            {data.counts[kind]
               ? "لا توجد نتائج مطابقة"
               : "ابدأ بأول " + (kind === "article" ? "مقال" : "مشروع")}
           </h2>
           <p className="admin-muted">
-            {group.length
+            {data.counts[kind]
               ? "جرّب كلمات بحث أو حالة نشر مختلفة."
               : "أضف المحتوى واحفظه كمسودة حتى يصبح جاهزًا للنشر."}
           </p>
@@ -300,14 +292,17 @@ export function ContentManager({
       )}
       <div className="content-pagination">
         <span>
-          {filtered.length} نتيجة · صفحة {current} من {pages}
+          {data.total} نتيجة · صفحة {current} من {pages}
         </span>
         <div>
-          <button disabled={current === 1} onClick={() => setPage(current - 1)}>
+          <button
+            disabled={loading || current === 1}
+            onClick={() => setPage(current - 1)}
+          >
             السابق
           </button>
           <button
-            disabled={current === pages}
+            disabled={loading || current >= pages}
             onClick={() => setPage(current + 1)}
           >
             التالي
@@ -353,11 +348,8 @@ export function ContentManager({
                     updated_at: removing.updated_at,
                   });
                   if (result.ok) {
-                    setEntries((items) =>
-                      items.filter(
-                        (e) => e.kind !== removing.kind || e.id !== removing.id,
-                      ),
-                    );
+                    if (visible.length === 1 && page > 1) setPage(page - 1);
+                    reload();
                     setMessage({
                       ok: true,
                       text: "تم حذف المحتوى وترجماته نهائيًا.",

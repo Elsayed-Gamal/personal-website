@@ -2,6 +2,7 @@ import { beforeEach, expect, it, vi } from "vitest";
 import { article, project } from "../fixtures/admin-content";
 const mock = vi.hoisted(() => ({
   guard: vi.fn(),
+  rpc: vi.fn(),
   from: vi.fn(),
   select: vi.fn(),
   eq: vi.fn(),
@@ -12,7 +13,7 @@ const mock = vi.hoisted(() => ({
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/auth/admin", () => ({ requireAdmin: mock.guard }));
 vi.mock("@/lib/supabase/auth-server", () => ({
-  createAuthClient: async () => ({ from: mock.from }),
+  createAuthClient: async () => ({ from: mock.from, rpc: mock.rpc }),
 }));
 import {
   getAdminContent,
@@ -47,17 +48,24 @@ it("denies both summary and detail reads before database access", async () => {
   expect(mock.from).not.toHaveBeenCalled();
 });
 it("selects only list columns and removes bodies from the returned payload", async () => {
-  mock.range
-    .mockResolvedValueOnce({ data: [articleRow], error: null })
-    .mockResolvedValueOnce({ data: [projectRow], error: null });
+  mock.rpc.mockResolvedValue({
+    data: {
+      items: [article],
+      total: 1,
+      counts: { article: 1, project: 0, published: 1, draft: 0 },
+    },
+    error: null,
+  });
   const result = await getAdminContent();
-  expect(result).toHaveLength(2);
-  expect(JSON.stringify(result)).not.toContain('"body"');
-  expect(JSON.stringify(result)).not.toContain('"excerpt"');
-  for (const [columns] of mock.select.mock.calls) {
-    expect(columns).not.toContain("*");
-    expect(columns).not.toContain("body");
-  }
+  expect(result.items).toHaveLength(1);
+  expect(JSON.stringify(result.items)).not.toContain('"body"');
+  expect(mock.rpc).toHaveBeenCalledWith("list_admin_content", {
+    p_page: 1,
+    p_size: 10,
+    p_kind: "article",
+    p_status: "all",
+    p_search: "",
+  });
 });
 it("loads only the selected entry with its complete translations", async () => {
   mock.single.mockResolvedValue({ data: articleRow, error: null });

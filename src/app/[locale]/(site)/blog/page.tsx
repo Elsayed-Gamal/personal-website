@@ -1,3 +1,4 @@
+import { ListPagination, listingPage } from "@/components/ui/list-pagination";
 import { notFound } from "next/navigation";
 import { ArticleCard } from "@/components/blog/article-card";
 import { isLocale } from "@/lib/content";
@@ -13,11 +14,13 @@ export async function generateMetadata({
 
 export default async function BlogPage({
   params,
+  searchParams,
 }: PageProps<"/[locale]/blog">) {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
+  const page = listingPage((await searchParams).page);
   const [articles, copy] = await Promise.all([
-    getArticles(),
+    getArticles(page),
     getSiteContent("blog", locale),
   ]);
   return (
@@ -30,10 +33,16 @@ export default async function BlogPage({
         <p className="mt-6 max-w-2xl leading-8 text-[#586779]">{copy.text}</p>
       </header>
       <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-        {articles.map((article) => (
+        {articles.items.map((article) => (
           <ArticleCard key={article.id} article={article} locale={locale} />
         ))}
       </div>
+      <ListPagination
+        page={page}
+        hasMore={articles.hasMore}
+        base={`/${locale}/blog`}
+        locale={locale}
+      />
     </section>
   );
 }

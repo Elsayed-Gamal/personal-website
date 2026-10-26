@@ -9,7 +9,7 @@ export default async function MessagesPage() {
         title="الرسائل"
         description="تابع استفسارات العملاء ورسائل التواصل الواردة من الموقع."
       />
-      <MessageInbox initialMessages={messages} />
+      <MessageInbox initialPage={messages} />
     </>
   );
 }

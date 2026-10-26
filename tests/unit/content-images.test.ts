@@ -21,6 +21,9 @@ const path = "articles/00000000-0000-4000-8000-000000000001.webp";
 afterEach(() => vi.unstubAllGlobals());
 beforeEach(() => {
   vi.resetAllMocks();
+  vi.stubGlobal("document", {
+    createElement: () => ({ getContext: () => null }),
+  });
   mock.from.mockReturnValue({ upload: mock.upload });
   mock.client.mockReturnValue({ storage: { from: mock.from } });
   vi.stubGlobal(
@@ -138,5 +141,30 @@ describe("content images", () => {
     await expect(uploadContentImage(file, "article")).rejects.toThrow(
       "المسؤول",
     );
+  });
+  it("resizes large uploads and uses WebP only when the encoded result is smaller", async () => {
+    const draw = vi.fn();
+    const canvas = {
+      width: 0,
+      height: 0,
+      getContext: () => ({ drawImage: draw }),
+      toBlob: (done: (blob: Blob) => void) =>
+        done(new Blob(["small"], { type: "image/webp" })),
+    };
+    vi.stubGlobal("document", { createElement: () => canvas });
+    vi.mocked(createImageBitmap).mockResolvedValueOnce({
+      width: 3840,
+      height: 2160,
+      close: vi.fn(),
+    } as unknown as ImageBitmap);
+    mock.upload.mockResolvedValue({ error: null });
+    const result = await uploadContentImage(
+      new File(["x".repeat(100)], "large.png", { type: "image/png" }),
+      "article",
+    );
+    expect([canvas.width, canvas.height]).toEqual([1920, 1080]);
+    expect(result).toMatch(/\.webp$/);
+    expect(mock.upload.mock.calls[0][1].size).toBe(5);
+    expect(mock.upload.mock.calls[0][2].contentType).toBe("image/webp");
   });
 });
