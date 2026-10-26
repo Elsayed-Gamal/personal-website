@@ -329,7 +329,7 @@ summary {
   justify-content: space-between;
   background: #f4f6f9;
   padding: 9px 12px;
-  color: #748399;
+  color: #586779;
   font-size: 8px;
   border-bottom: 1px solid #e2e7ef;
 }
@@ -365,7 +365,7 @@ summary {
 .preview-kicker {
   font-size: 6px;
   letter-spacing: 0.15em;
-  color: #6d7b8f;
+  color: #586779;
 }
 .preview-content h2 {
   font-size: 36px;
@@ -426,7 +426,7 @@ summary {
   border-top: 1px solid #e1e7f0;
   padding-top: 12px;
   font-size: 6px;
-  color: #7b899c;
+  color: #586779;
 }
 .design-note {
   position: absolute;
@@ -526,7 +526,7 @@ summary {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  color: #8b99aa;
+  color: #586779;
   font-size: 12px;
 }
 .service-icon {
@@ -836,7 +836,7 @@ summary {
   gap: 20px;
   border-top: 1px solid var(--line);
   padding-top: 22px;
-  color: #6c7a8c;
+  color: #586779;
   font-size: 11px;
 }
 .article-body {

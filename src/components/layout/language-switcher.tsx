@@ -19,9 +19,11 @@ export function LanguageSwitcher({
     <Link
       href={target}
       className="language-switch"
-      aria-label={locale === "ar" ? "Switch to English" : "التبديل إلى العربية"}
     >
       {label}
+      <span className="site-sr-only">
+        {locale === "ar" ? " — Switch to English" : " — التبديل إلى العربية"}
+      </span>
     </Link>
   );
 }

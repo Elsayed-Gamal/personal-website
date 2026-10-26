@@ -37,7 +37,6 @@ export function SiteHeader({ locale, t }: { locale: Locale; t: SiteUI }) {
         <Link
           href={`/${locale}`}
           className="group flex items-center gap-3.5"
-          aria-label={t.nav.home}
         >
           <span className="brand-mark">
             <span>EG</span>
@@ -46,10 +45,12 @@ export function SiteHeader({ locale, t }: { locale: Locale; t: SiteUI }) {
             <span className="block text-sm font-bold tracking-[-.01em]">
               {t.brandName}
             </span>
-            <span className="mt-0.5 block text-[10px] tracking-[.17em] text-[#777873] uppercase">
+            <span className="mt-0.5 block text-[10px] tracking-[.17em] text-[#62645e] uppercase">
               {t.brandRole}
             </span>
           </span>
+          <span className="site-sr-only sm:hidden">{t.brandName}</span>
+          <span className="site-sr-only"> — {t.nav.home}</span>
         </Link>
 
         <nav
