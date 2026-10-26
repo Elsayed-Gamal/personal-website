@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { createElement } from "react";
 import {
+  act,
   cleanup,
   fireEvent,
   render,
@@ -53,10 +54,47 @@ afterEach(() => {
   mock.save.mockReset();
   mock.remove.mockReset();
   mock.load.mockReset();
+  mock.list.mockReset();
   mock.mediaLoad.mockReset();
   mock.uploadImage.mockReset();
 });
 describe("content manager", () => {
+  it("replaces old rows and pagination with a spinner while switching content tabs", async () => {
+    const counts = { article: 1, project: 1, published: 1, draft: 0 };
+    let finish!: () => void;
+    mock.list.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = () =>
+            resolve({
+              ok: true,
+              page: { items: [project], total: 1, counts },
+            });
+        }),
+    );
+    const { container } = render(
+      createElement(ContentManager, {
+        initialPage: { items: [article], total: 1, counts },
+      }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: /المشاريع/ }));
+    expect(screen.queryByText(article.translations[0].title)).toBeNull();
+    expect(
+      screen.getByRole("status").querySelector(".admin-loading-spinner"),
+    ).toBeTruthy();
+    expect(container.querySelector(".content-pagination")).toBeNull();
+    expect(container.querySelector(".content-summary")).toBeNull();
+    await waitFor(() => expect(mock.list).toHaveBeenCalledTimes(1));
+    await act(async () => finish());
+    expect(screen.getByText(project.translations[0].title)).toBeTruthy();
+    expect(screen.queryByText("جارٍ تحميل القائمة…")).toBeNull();
+    expect(container.querySelector(".content-pagination")).toBeTruthy();
+
+    mock.list.mockImplementationOnce(() => new Promise(() => {}));
+    fireEvent.click(screen.getByRole("button", { name: /المقالات/ }));
+    expect(screen.queryByText(project.translations[0].title)).toBeNull();
+    expect(screen.getByText("جارٍ تحميل القائمة…")).toBeTruthy();
+  });
   it("fetches complete content only when editing and keeps the list on failure", async () => {
     const { contentSummarySchema } =
       await import("../../src/lib/admin/content");

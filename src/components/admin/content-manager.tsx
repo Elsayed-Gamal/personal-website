@@ -108,10 +108,12 @@ export function ContentManager({ initialPage }: { initialPage: ContentPage }) {
           <Plus size={18} /> إضافة {kind === "article" ? "مقال" : "مشروع"}
         </button>
       </div>
-      <div className="content-summary">
-        <span>{data.counts.published} منشور</span>
-        <span>{data.counts.draft} مسودة</span>
-      </div>
+      {!loading && !error && (
+        <div className="content-summary">
+          <span>{data.counts.published} منشور</span>
+          <span>{data.counts.draft} مسودة</span>
+        </div>
+      )}
       <div className="content-filters">
         <div className="content-search">
           <Search size={18} aria-hidden="true" />
@@ -161,13 +163,17 @@ export function ContentManager({ initialPage }: { initialPage: ContentPage }) {
           {error}
         </p>
       )}
-      {loading && <p role="status">جارٍ تحميل القائمة…</p>}
       {opening && (
         <p role="status" className="admin-muted">
           جارٍ تحميل بيانات المحتوى…
         </p>
       )}
-      {visible.length ? (
+      {loading ? (
+        <div className="admin-loading" role="status" aria-live="polite">
+          <span className="admin-loading-spinner" aria-hidden="true" />
+          <p>جارٍ تحميل القائمة…</p>
+        </div>
+      ) : error ? null : visible.length ? (
         <div className="content-list">
           {visible.map((entry) => (
             <article key={entry.kind + entry.id} className="content-row">
@@ -290,25 +296,27 @@ export function ContentManager({ initialPage }: { initialPage: ContentPage }) {
           </p>
         </div>
       )}
-      <div className="content-pagination">
-        <span>
-          {data.total} نتيجة · صفحة {current} من {pages}
-        </span>
-        <div>
-          <button
-            disabled={loading || current === 1}
-            onClick={() => setPage(current - 1)}
-          >
-            السابق
-          </button>
-          <button
-            disabled={loading || current >= pages}
-            onClick={() => setPage(current + 1)}
-          >
-            التالي
-          </button>
+      {!loading && !error && (
+        <div className="content-pagination">
+          <span>
+            {data.total} نتيجة · صفحة {current} من {pages}
+          </span>
+          <div>
+            <button
+              disabled={loading || current === 1}
+              onClick={() => setPage(current - 1)}
+            >
+              السابق
+            </button>
+            <button
+              disabled={loading || current >= pages}
+              onClick={() => setPage(current + 1)}
+            >
+              التالي
+            </button>
+          </div>
         </div>
-      </div>
+      )}
       <dialog
         ref={dialog}
         className="content-delete-dialog"
