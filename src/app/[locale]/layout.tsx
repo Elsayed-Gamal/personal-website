@@ -8,10 +8,10 @@ import { PageViewTracker } from "@/components/analytics/page-view-tracker";
 import { analyticsEnabled } from "@/lib/analytics";
 import { buildSeoMetadata } from "@/lib/seo";
 import "@fontsource-variable/manrope";
-import "@fontsource/ibm-plex-sans-arabic/400.css";
-import "@fontsource/ibm-plex-sans-arabic/500.css";
-import "@fontsource/ibm-plex-sans-arabic/600.css";
-import "@fontsource/ibm-plex-sans-arabic/700.css";
+import "@fontsource/ibm-plex-sans-arabic/arabic-400.css";
+import "@fontsource/ibm-plex-sans-arabic/arabic-500.css";
+import "@fontsource/ibm-plex-sans-arabic/arabic-600.css";
+import "@fontsource/ibm-plex-sans-arabic/arabic-700.css";
 import "@/styles/globals.css";
 
 export async function generateMetadata({
