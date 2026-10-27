@@ -15,6 +15,8 @@ test("both homepages show bounded selections from the current published content"
     const initialHtml = await response!.text();
     expect(initialHtml).not.toContain("Loading content…");
     expect(initialHtml).not.toContain("جارٍ تحميل المحتوى…");
+    expect(initialHtml).not.toContain("Loading page…");
+    expect(initialHtml).not.toContain("جارٍ تحميل الصفحة…");
     if (projects) expect(initialHtml).toContain("case-study-card");
     if (articles) expect(initialHtml).toContain("article-card");
     await expect(page.locator("html")).toHaveAttribute("lang", locale);
