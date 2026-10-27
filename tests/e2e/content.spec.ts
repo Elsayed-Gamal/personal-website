@@ -12,6 +12,11 @@ test("both homepages show bounded selections from the current published content"
     const articles = await page.locator(".article-card").count();
     const response = await page.goto(`/${locale}`);
     expect(response?.status()).toBe(200);
+    const initialHtml = await response!.text();
+    expect(initialHtml).not.toContain("Loading content…");
+    expect(initialHtml).not.toContain("جارٍ تحميل المحتوى…");
+    if (projects) expect(initialHtml).toContain("case-study-card");
+    if (articles) expect(initialHtml).toContain("article-card");
     await expect(page.locator("html")).toHaveAttribute("lang", locale);
     await expect(page.locator(".case-study-card")).toHaveCount(
       Math.min(2, projects),
