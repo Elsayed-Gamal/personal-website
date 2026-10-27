@@ -5,6 +5,8 @@ coverage
 playwright-report
 test-results
 .env*
+!.env.example
 .vercel
 *.log
+*.tsbuildinfo
 supabase/.temp/
