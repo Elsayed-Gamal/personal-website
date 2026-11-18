@@ -1597,3 +1597,18 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+.search-console-metrics dt {
+  color: #526681;
+  font-size: 13px;
+}
+.search-console-metrics dd {
+  margin: 8px 0 0;
+  color: #183a6c;
+  font-size: clamp(20px, 3vw, 30px);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.search-console-label {
+  overflow-wrap: anywhere;
+}

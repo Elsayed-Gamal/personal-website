@@ -10,6 +10,7 @@ import {
   Globe,
 } from "lucide-react";
 import { type DashboardData, viewTrend } from "@/lib/analytics";
+import type { ReactNode } from "react";
 const number = (value: number) => new Intl.NumberFormat("ar-EG").format(value);
 function date(value: string) {
   return new Intl.DateTimeFormat("ar-EG", {
@@ -28,9 +29,11 @@ function countryLabel(code: string) {
 export function DashboardView({
   data,
   trackingEnabled,
+  searchConsole,
 }: {
   data: DashboardData;
   trackingEnabled: boolean;
+  searchConsole: ReactNode;
 }) {
   const trend = viewTrend(data.views, data.previous_views);
   const max = Math.max(1, ...data.daily.map((d) => d.views));
@@ -372,6 +375,7 @@ export function DashboardView({
           )}
         </section>
       </div>
+      {searchConsole}
       <p className="dashboard-note">
         آخر تحديث:{" "}
         {new Date(data.generated_at).toLocaleString("ar-EG", {

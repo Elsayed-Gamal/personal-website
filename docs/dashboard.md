@@ -29,3 +29,34 @@ Receipts live in non-exposed `private.analytics_receipts`, with RLS and no clien
 `tests/integration/dashboard.sql` verifies recording, duplicate suppression, admin/unknown-route rejection, privacy of aggregate reads, owner counts, period validation and zero-filled daily buckets, inside a rolled-back transaction. Unit tests cover endpoint origin/body constraints, privacy flags, country trust, authorization, failures, and visible route tracking without StrictMode duplicates. Browser tests ensure automated navigation is excluded and existing public pages still work. No owner password is used in testing.
 
 Advisors report the intentionally closed private receipt tables with RLS and no policies ([reference](https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy)), plus the pre-existing disabled leaked-password protection setting ([reference](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection)).
+
+## Google Search Console
+
+The admin dashboard can show Google Web Search clicks, impressions, CTR, average
+position, daily trends, top queries, and top pages. Its 7/30/90-day selector also
+controls this report. Search Console uses Pacific dates. The report ends three
+days before the current Pacific date and requests finalized data only. Missing
+daily rows appear as gaps. Reports are cached for 15 minutes.
+
+1. Enable the [Search Console API](https://console.cloud.google.com/apis/library/searchconsole.googleapis.com)
+   in the Google Cloud project you use for this integration.
+2. Open [Service Accounts](https://console.cloud.google.com/iam-admin/serviceaccounts)
+   in that project. Create a service account without assigning a Google Cloud
+   IAM role. Under **Keys → Add key → Create new key** download its JSON key.
+3. Open the verified Search Console property. Under **Settings → Users and
+   permissions → Add user**, grant the service account email **Restricted**
+   access to the property.
+4. Add these server-side variables to Vercel Production, or to `.env.local`
+   for development. Use the exact Search Console property identifier.
+
+   | Variable                      | Value                                                                                                       |
+   | ----------------------------- | ----------------------------------------------------------------------------------------------------------- |
+   | `SEARCH_CONSOLE_SITE`         | `https://elsayedgamal.vercel.app/` for the URL-prefix property                                              |
+   | `SEARCH_CONSOLE_CLIENT_EMAIL` | The service account's `client_email` from JSON                                                              |
+   | `SEARCH_CONSOLE_PRIVATE_KEY`  | The complete `private_key` from JSON, stored as a Vercel secret. Actual newlines or escaped `\n` both work. |
+
+5. Deploy and open `/admin/dashboard` as the site administrator. The server
+   signs a short-lived assertion and requests a Google access token using
+   the Search Console read-only scope. Keep the JSON key out of Git and chat.
+   If the report is unavailable, verify the API is enabled and the account has
+   access to the correct property.
