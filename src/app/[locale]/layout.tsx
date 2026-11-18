@@ -22,6 +22,9 @@ export async function generateMetadata({
   const ui = await getSiteUI(locale);
   return {
     ...buildSeoMetadata(ui, locale),
+    verification: {
+      google: "HZMdEf-vdi7-i8aCUCTPoxnaivpYSa0HcGPZsGYrssY",
+    },
     icons: {
       icon: { url: "/favicon.svg", type: "image/svg+xml", sizes: "any" },
       shortcut: "/favicon.svg",
