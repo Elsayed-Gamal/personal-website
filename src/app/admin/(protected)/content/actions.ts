@@ -44,6 +44,7 @@ function failure(code?: string) {
 }
 function refreshContent() {
   updateTag("public-content");
+  revalidatePath("/sitemap.xml");
   revalidatePath("/ar", "layout");
   revalidatePath("/en", "layout");
   revalidatePath("/admin/content");

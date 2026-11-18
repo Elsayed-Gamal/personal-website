@@ -55,6 +55,8 @@ describe("settings save action", () => {
     expect(query.update).toHaveBeenCalledWith({ value: input.value });
     expect(mock.revalidate).toHaveBeenCalledWith("/ar", "layout");
     expect(mock.updateTag).toHaveBeenCalledWith("public-content");
+    expect(mock.revalidate).toHaveBeenCalledWith("/sitemap.xml");
+    expect(mock.revalidate).toHaveBeenCalledWith("/robots.txt");
   });
   it("reports conflicts and database failures without claiming success", async () => {
     const query = {

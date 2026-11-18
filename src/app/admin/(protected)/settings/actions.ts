@@ -45,6 +45,8 @@ export async function saveSettings(
           "تغير المحتوى منذ فتح الصفحة أو لم تعد لديك صلاحية التعديل. أعد تحميل النسخة الحالية قبل الحفظ.",
       };
     updateTag("public-content");
+    revalidatePath("/sitemap.xml");
+    revalidatePath("/robots.txt");
     revalidatePath("/" + locale, "layout");
     revalidatePath("/admin/settings");
     return {

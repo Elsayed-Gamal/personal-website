@@ -46,6 +46,7 @@ describe("content actions", () => {
     });
     expect(mock.revalidate).toHaveBeenCalledWith("/ar", "layout");
     expect(mock.updateTag).toHaveBeenCalledWith("public-content");
+    expect(mock.revalidate).toHaveBeenCalledWith("/sitemap.xml");
     expect(mock.revalidate).toHaveBeenCalledWith("/en", "layout");
     expect(mock.revalidate).toHaveBeenCalledWith("/admin/content");
     expect(mock.revalidate).toHaveBeenCalledWith("/admin/dashboard");
@@ -67,6 +68,8 @@ describe("content actions", () => {
     mock.rpc.mockResolvedValue({ error: null });
     expect(await deleteContent(article)).toEqual({ ok: true });
     expect(mock.revalidate).toHaveBeenCalledWith("/admin/dashboard");
+    expect(mock.revalidate).toHaveBeenCalledWith("/sitemap.xml");
+    expect(mock.updateTag).toHaveBeenCalledWith("public-content");
     expect(mock.rpc).toHaveBeenCalledWith("delete_site_entry", {
       entry_kind: "article",
       entry_id: article.id,
