@@ -1612,3 +1612,65 @@
 .search-console-label {
   overflow-wrap: anywhere;
 }
+
+.inbox-selection-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  border: 1px solid #dfe7f2;
+  border-radius: 12px;
+  background: white;
+  font-size: 13px;
+  color: #334d70;
+}
+.inbox-selection-bar label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+.inbox-selection-bar input,
+.inbox-row-check input {
+  width: 17px;
+  height: 17px;
+  margin: 0;
+  accent-color: #245bc4;
+  cursor: pointer;
+}
+.inbox-selection-count {
+  margin-inline-end: auto;
+  color: #526681;
+}
+.inbox-selection-bar button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+}
+.inbox-selection-bar button[aria-pressed="true"] {
+  background: #e8f0ff;
+  color: #245bc4;
+}
+.inbox-row {
+  position: relative;
+}
+.inbox-row .inbox-item {
+  padding-inline-start: 52px;
+}
+.inbox-row-checked .inbox-item {
+  border-color: #8aafe8;
+  background: #eef5ff;
+}
+.inbox-row-check {
+  position: absolute;
+  inset-block-start: 10px;
+  inset-inline-start: 8px;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+}

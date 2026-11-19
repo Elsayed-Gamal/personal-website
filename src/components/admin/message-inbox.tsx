@@ -10,8 +10,12 @@ import {
   ArrowRight,
 } from "lucide-react";
 import {
+  deleteAllSelectedMessages,
   deleteMessage,
+  deleteMessages,
+  selectAllMessages,
   setMessageRead,
+  type AllMessagesSelection,
 } from "@/app/admin/(protected)/messages/actions";
 import { usePagedData } from "./use-paged-data";
 import {
@@ -34,7 +38,16 @@ export function MessageInbox({ initialPage }: { initialPage: MessagePage }) {
   const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(
     null,
   );
-  const [deleting, setDeleting] = useState<InboxMessage | null>(null);
+  const [checkedIds, setCheckedIds] = useState<string[]>([]);
+  const [allSelection, setAllSelection] = useState<AllMessagesSelection | null>(
+    null,
+  );
+  const [deleting, setDeleting] = useState<
+    | { message: InboxMessage }
+    | { ids: string[] }
+    | { all: AllMessagesSelection }
+    | null
+  >(null);
   const [pending, startTransition] = useTransition();
   const dialog = useRef<HTMLDialogElement>(null);
   useEffect(() => {
@@ -47,7 +60,17 @@ export function MessageInbox({ initialPage }: { initialPage: MessagePage }) {
     loadMessagePage,
   );
   const messages = data.items;
-  const filtered = messages;
+  function isChecked(message: MessageSummary) {
+    return allSelection
+      ? Date.parse(message.created_at) <= Date.parse(allSelection.through)
+      : checkedIds.includes(message.id);
+  }
+  const checked = messages.filter(isChecked);
+  const selectedCount = allSelection?.count ?? checked.length;
+  const canSelectAll = filter === "all" && !search.trim();
+  const allChecked = checked.length > 0 && checked.length === messages.length;
+  const someChecked = checked.length > 0 && !allChecked;
+  const canSelect = !pending && !loading && !error;
   const unread = data.counts.unread;
   const pages = Math.max(1, Math.ceil(data.total / ADMIN_PAGE_SIZE));
   const current = page;
@@ -104,6 +127,111 @@ export function MessageInbox({ initialPage }: { initialPage: MessagePage }) {
       }
     });
   }
+  function toggleAllMessages() {
+    if (allSelection) {
+      setAllSelection(null);
+      return;
+    }
+    setNotice(null);
+    startTransition(async () => {
+      try {
+        const result = await selectAllMessages();
+        if (!result.ok) {
+          setNotice({ ok: false, text: result.message });
+        } else if (result.selection.count === 0) {
+          setNotice({ ok: true, text: "لا توجد رسائل لتحديدها." });
+          reload();
+        } else {
+          setCheckedIds([]);
+          setAllSelection(result.selection);
+        }
+      } catch {
+        setNotice({ ok: false, text: "تعذر تحديد كل الرسائل. حاول مجددًا." });
+      }
+    });
+  }
+
+  function confirmDelete() {
+    if (!deleting) return;
+    setNotice(null);
+    startTransition(async () => {
+      try {
+        if ("all" in deleting) {
+          const result = await deleteAllSelectedMessages(deleting.all.through);
+          if (!result.ok) {
+            setNotice({ ok: false, text: result.message });
+            return;
+          }
+          setAllSelection(null);
+          setCheckedIds([]);
+          setSelectedId(null);
+          setSelected(null);
+          setPage(1);
+          reload();
+          setNotice({
+            ok: true,
+            text: result.count
+              ? `تم حذف الرسائل المحددة (${result.count}).`
+              : "الرسائل المحددة لم تعد موجودة.",
+          });
+          return;
+        }
+        const single = "message" in deleting ? deleting.message : null;
+        const result =
+          "ids" in deleting
+            ? await deleteMessages(deleting.ids)
+            : await deleteMessage({
+                id: deleting.message.id,
+                expectedReadAt: deleting.message.read_at,
+              });
+        if (!result.ok) {
+          setNotice({ ok: false, text: result.message });
+          return;
+        }
+        const removed =
+          "deleted" in result ? result.deleted : single ? [single] : [];
+        const requestedIds =
+          "ids" in deleting ? deleting.ids : [deleting.message.id];
+        const removedIds = new Set(removed.map((message) => message.id));
+        const unreadRemoved = removed.filter(
+          (message) => !message.read_at,
+        ).length;
+        if (unreadRemoved)
+          window.dispatchEvent(
+            new CustomEvent("admin:unread-messages", {
+              detail: -unreadRemoved,
+            }),
+          );
+        if (selectedId && removedIds.has(selectedId)) {
+          setSelectedId(null);
+          setSelected(null);
+        }
+        setCheckedIds((ids) => ids.filter((id) => !requestedIds.includes(id)));
+        if (page > 1 && messages.every((message) => removedIds.has(message.id)))
+          setPage(page - 1);
+        reload();
+        const missing = requestedIds.length - removed.length;
+        setNotice({
+          ok: missing === 0,
+          text: single
+            ? "تم حذف الرسالة نهائيًا."
+            : missing === 0
+              ? `تم حذف الرسائل المحددة (${removed.length}).`
+              : `تم حذف ${removed.length} من ${requestedIds.length} رسائل. بعض الرسائل لم تعد متاحة.`,
+        });
+      } catch {
+        setNotice({ ok: false, text: "تعذر الحذف. حاول مجددًا." });
+      } finally {
+        setDeleting(null);
+      }
+    });
+  }
+
+  function goToPage(next: number) {
+    setCheckedIds([]);
+    setPage(next);
+  }
+
   function date(value: string) {
     return new Date(value).toLocaleString("ar-EG", {
       timeZone: "Africa/Cairo",
@@ -125,10 +253,12 @@ export function MessageInbox({ initialPage }: { initialPage: MessagePage }) {
             <button
               key={key}
               type="button"
+              disabled={pending}
               aria-pressed={filter === key}
               onClick={() => {
                 setFilter(key as MessageQuery["filter"]);
-                setPage(1);
+                setAllSelection(null);
+                goToPage(1);
               }}
             >
               {label} <span className="content-count">{count}</span>
@@ -138,7 +268,11 @@ export function MessageInbox({ initialPage }: { initialPage: MessagePage }) {
         <button
           className="settings-reset inbox-refresh"
           disabled={pending}
-          onClick={reload}
+          onClick={() => {
+            setCheckedIds([]);
+            setAllSelection(null);
+            reload();
+          }}
         >
           <RefreshCw size={16} /> تحديث الوارد
         </button>
@@ -151,10 +285,12 @@ export function MessageInbox({ initialPage }: { initialPage: MessagePage }) {
         <input
           id="inbox-search"
           type="search"
+          disabled={pending}
           value={search}
           onChange={(e) => {
             setSearch(e.target.value);
-            setPage(1);
+            setAllSelection(null);
+            goToPage(1);
           }}
           placeholder="ابحث بالاسم أو البريد أو نص الرسالة…"
         />
@@ -179,34 +315,106 @@ export function MessageInbox({ initialPage }: { initialPage: MessagePage }) {
       )}
       <div className={"inbox-columns" + (selected ? " has-selection" : "")}>
         <section className="inbox-list" aria-label="الرسائل الواردة">
-          {filtered.map((message) => (
-            <button
-              disabled={pending || loading}
-              key={message.id}
-              onClick={() => open(message)}
+          {messages.length > 0 && (
+            <div className="inbox-selection-bar">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={allChecked}
+                  ref={(input) => {
+                    if (input) input.indeterminate = someChecked;
+                  }}
+                  disabled={!canSelect || !!allSelection}
+                  onChange={(event) =>
+                    setCheckedIds(
+                      event.target.checked
+                        ? messages.map((message) => message.id)
+                        : [],
+                    )
+                  }
+                />
+                تحديد الصفحة
+              </label>
+              {canSelectAll && (
+                <button
+                  type="button"
+                  className="settings-reset"
+                  aria-pressed={!!allSelection}
+                  disabled={!canSelect}
+                  onClick={toggleAllMessages}
+                >
+                  تحديد كل الرسائل
+                </button>
+              )}
+              <span aria-live="polite" className="inbox-selection-count">
+                {selectedCount > 0 ? `${selectedCount} محددة` : ""}
+              </span>
+              <button
+                type="button"
+                className="content-danger"
+                disabled={!canSelect || !selectedCount}
+                onClick={() =>
+                  setDeleting(
+                    allSelection
+                      ? { all: allSelection }
+                      : { ids: checked.map((message) => message.id) },
+                  )
+                }
+              >
+                <Trash2 size={16} aria-hidden="true" /> حذف المحدد
+              </button>
+            </div>
+          )}
+          {messages.map((message) => (
+            <div
               className={
-                "inbox-item" +
-                (!message.read_at ? " unread" : "") +
-                (message.id === selectedId ? " selected" : "")
+                "inbox-row" + (isChecked(message) ? " inbox-row-checked" : "")
               }
-              aria-pressed={message.id === selectedId}
+              key={message.id}
             >
-              <span className="inbox-item-top">
-                <strong>{message.name}</strong>
-                {!message.read_at && (
-                  <span className="inbox-dot" aria-label="غير مقروءة" />
-                )}
-              </span>
-              <span className="inbox-email" dir="ltr">
-                {message.email}
-              </span>
-              <span className="inbox-snippet">{message.snippet}</span>
-              <time dateTime={message.created_at}>
-                {date(message.created_at)}
-              </time>
-            </button>
+              <label className="inbox-row-check">
+                <input
+                  type="checkbox"
+                  aria-label={`تحديد رسالة من ${message.name}`}
+                  checked={isChecked(message)}
+                  disabled={!canSelect || !!allSelection}
+                  onChange={(event) => {
+                    const isChecked = event.target.checked;
+                    setCheckedIds((ids) =>
+                      isChecked
+                        ? [...ids, message.id]
+                        : ids.filter((id) => id !== message.id),
+                    );
+                  }}
+                />
+              </label>
+              <button
+                disabled={pending || loading}
+                onClick={() => open(message)}
+                className={
+                  "inbox-item" +
+                  (!message.read_at ? " unread" : "") +
+                  (message.id === selectedId ? " selected" : "")
+                }
+                aria-pressed={message.id === selectedId}
+              >
+                <span className="inbox-item-top">
+                  <strong>{message.name}</strong>
+                  {!message.read_at && (
+                    <span className="inbox-dot" aria-label="غير مقروءة" />
+                  )}
+                </span>
+                <span className="inbox-email" dir="ltr">
+                  {message.email}
+                </span>
+                <span className="inbox-snippet">{message.snippet}</span>
+                <time dateTime={message.created_at}>
+                  {date(message.created_at)}
+                </time>
+              </button>
+            </div>
           ))}
-          {!filtered.length && (
+          {!messages.length && (
             <div className="admin-panel content-empty">
               <Mail size={32} />
               <h2>
@@ -225,14 +433,14 @@ export function MessageInbox({ initialPage }: { initialPage: MessagePage }) {
             </span>
             <div>
               <button
-                disabled={loading || current === 1}
-                onClick={() => setPage(current - 1)}
+                disabled={pending || loading || current === 1}
+                onClick={() => goToPage(current - 1)}
               >
                 السابق
               </button>
               <button
-                disabled={loading || current >= pages}
-                onClick={() => setPage(current + 1)}
+                disabled={pending || loading || current >= pages}
+                onClick={() => goToPage(current + 1)}
               >
                 التالي
               </button>
@@ -304,7 +512,7 @@ export function MessageInbox({ initialPage }: { initialPage: MessagePage }) {
                 <button
                   className="content-danger"
                   disabled={pending}
-                  onClick={() => setDeleting(selected)}
+                  onClick={() => setDeleting({ message: selected })}
                 >
                   <Trash2 size={16} /> حذف
                 </button>
@@ -331,10 +539,23 @@ export function MessageInbox({ initialPage }: { initialPage: MessagePage }) {
           else setDeleting(null);
         }}
       >
-        <h2 id="delete-message-title">حذف الرسالة نهائيًا؟</h2>
-        <p>رسالة من {deleting?.name}</p>
+        <h2 id="delete-message-title">
+          {deleting && "all" in deleting
+            ? "حذف كل الرسائل المحددة؟"
+            : deleting && "ids" in deleting
+              ? "حذف الرسائل المحددة نهائيًا؟"
+              : "حذف الرسالة نهائيًا؟"}
+        </h2>
+        <p>
+          {deleting &&
+            ("all" in deleting
+              ? `سيشمل الحذف ${deleting.all.count} رسالة عبر كل الصفحات. الرسائل الواردة بعد التحديد ستبقى.`
+              : "ids" in deleting
+                ? `عدد الرسائل المحددة: ${deleting.ids.length}`
+                : `رسالة من ${deleting.message.name}`)}
+        </p>
         <p className="admin-muted">
-          ستُحذف الرسالة من قاعدة البيانات ولا يمكن التراجع من لوحة الإدارة.
+          الحذف نهائي ولا يمكن التراجع عنه من لوحة الإدارة.
         </p>
         <div className="settings-save-actions">
           <button
@@ -348,33 +569,7 @@ export function MessageInbox({ initialPage }: { initialPage: MessagePage }) {
           <button
             disabled={pending}
             className="content-delete-confirm"
-            onClick={() => {
-              if (!deleting) return;
-              startTransition(async () => {
-                try {
-                  const result = await deleteMessage({
-                    id: deleting.id,
-                    expectedReadAt: deleting.read_at,
-                  });
-                  if (result.ok) {
-                    if (!deleting.read_at)
-                      window.dispatchEvent(
-                        new CustomEvent("admin:unread-messages", {
-                          detail: -1,
-                        }),
-                      );
-                    if (messages.length === 1 && page > 1) setPage(page - 1);
-                    reload();
-                    setSelectedId(null);
-                    setSelected(null);
-                    setNotice({ ok: true, text: "تم حذف الرسالة نهائيًا." });
-                  } else setNotice({ ok: false, text: result.message });
-                } catch {
-                  setNotice({ ok: false, text: "تعذر الحذف. حاول مجددًا." });
-                }
-                setDeleting(null);
-              });
-            }}
+            onClick={confirmDelete}
           >
             {pending ? "جارٍ الحذف…" : "حذف نهائي"}
           </button>
